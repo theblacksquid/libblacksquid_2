@@ -258,6 +258,7 @@ struct ltbs_cell
 {
     enum ltbs_type
     {
+	LTBS_BYTE,
 	LTBS_INT,
 	LTBS_FLOAT,
 	LTBS_STRING,
@@ -314,9 +315,21 @@ static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cel
 static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 
-/* #define LIBBLACKSQUID_IMPLEMENTATION // TODO: comment this line when shipping, only needed for LSP */
+static ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
+static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
+static int string_compare(ltbs_cell *string1, ltbs_cell *string2);
+static ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context);
+static ltbs_cell *string_to_list(ltbs_cell *string, Arena *context);
+static ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
+static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
+static void string_print(ltbs_cell *string);
+
+
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
+
+#include <stdlib.h>
+#include <stdio.h>
 
 static ltbs_cell *pair_head(ltbs_cell *list)
 {
@@ -549,6 +562,142 @@ static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cel
     arena_free(&workspace);
 
     return pair_reverse(result, context);
+}
+
+static ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
+{
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    int length = 0;
+    result->type = LTBS_STRING;
+    result->data.string.strdata = (unsigned char *)cstring;
+
+    for ( byte ch = cstring[0]; ch != 0; ch = cstring[++length] ){}
+
+    result->data.string.length = length;
+    return result;
+}
+
+static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context)
+{
+    if ( (string->data.string.length < start) ||
+	 (string->data.string.length < end) )
+    {
+	exit(1);
+	return 0;	
+    }
+
+    else
+    {
+	ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+	result->data.string.strdata = &string->data.string.strdata[start];
+	result->data.string.length = end - start;
+
+	return result;
+    }
+}
+
+static int string_compare(ltbs_cell *string1, ltbs_cell *string2)
+{
+    if ( string1->data.string.length != string2->data.string.length )
+	return 0;
+
+    else
+    {
+	int length = string1->data.string.length;
+	byte *buffer1 = string1->data.string.strdata;
+	byte *buffer2 = string2->data.string.strdata;
+	for (int index = 0; index < length; index++)
+	    if ( buffer1[index] != buffer2[index] ) return 0;
+
+	return 1;
+    }
+}
+
+static ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context)
+{
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    int length = string1->data.string.length + string2->data.string.length;
+    byte *bytearray = arena_alloc(context, length + 1);
+    
+    result->type = LTBS_STRING;
+    result->data.string.length = length;
+    result->data.string.strdata = bytearray;
+    bytearray[length + 1] = '\0';
+
+    for (int index = 0; index < length; index++)
+    {
+	int length1 = string1->data.string.length;
+	if ( index < length1 )
+	    bytearray[index] = string1->data.string.strdata[index];
+	else
+	    bytearray[index] = string2->data.string.strdata[index - length1];
+    }
+
+    return result;
+}
+
+static void string_print(ltbs_cell *string)
+{
+    for (unsigned int index = 0; index < string->data.string.length; index++)
+	putc(string->data.string.strdata[index], stdout);
+}
+
+static ltbs_cell *string_to_list(ltbs_cell *string, Arena *context)
+{
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    unsigned int length = string->data.string.length;
+
+    result->type = LTBS_PAIR;
+    result->data.pair.head = 0;
+    result->data.pair.rest = 0;
+
+    for (unsigned int index = 0; index < length; index++)
+    {
+	ltbs_cell *to_add = arena_alloc(context, 1);
+	to_add->type = LTBS_BYTE;
+	to_add->data.byteval = string->data.string.strdata[index];
+	result = pair_cons(to_add, result, context);
+    }
+
+    return result;
+}
+
+static ltbs_cell *string_reverse(ltbs_cell *string, Arena *context)
+{
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    int length = string->data.string.length;
+    byte *buffer = arena_alloc(context, length + 1);
+    int inner_index = 0;
+
+    result->type = LTBS_STRING;
+    result->data.string.length = length;
+    result->data.string.strdata = buffer;
+    buffer[length + 1] = '\0';
+
+    for (int index = length - 1; index > -1; index--)
+    {
+	buffer[inner_index] = string->data.string.strdata[index];
+	inner_index++;
+    }
+
+    return result;
+}
+
+static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
+{
+    ltbs_cell *result = arena_alloc(destination, sizeof(ltbs_cell));
+    unsigned int length = string->data.string.length;
+    byte *buffer = arena_alloc(destination, length + 1);
+
+    result->type = LTBS_STRING;
+    result->data.string.strdata = buffer;
+    result->data.string.length = length;
+    buffer[length + 1] = '\0';
+
+    for (unsigned int index = 0; index < length; index++)
+	buffer[index] = string->data.string.strdata[index];
+
+    return result;
 }
 
 #endif // LIBBLACKSQUID_IMPLEMENTATION
