@@ -274,8 +274,8 @@ struct ltbs_cell
 	
 	struct ltbs_pair
 	{
-	    ltbs_cell *data;
-	    ltbs_cell *prev;
+	    ltbs_cell *head;
+	    ltbs_cell *rest;
 	} pair;
 	
 	struct ltbs_string
@@ -299,41 +299,53 @@ struct ltbs_cell
     } data;
 };
 
-ltbs_cell *pair_head(ltbs_cell *pair);
-ltbs_cell *pair_rest(ltbs_cell *pair);
-ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
-unsigned int pair_is_atom(ltbs_cell *value);
-unsigned int pair_count(ltbs_cell *list);
-ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
-ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
-ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
-ltbs_cell *pair_sort(ltbs_cell *list, int (*pred)(ltbs_cell *prev, ltbs_cell *next), Arena *context);
-unsigned int pair_length(ltbs_cell *list);
-ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
+static ltbs_cell *pair_head(ltbs_cell *pair);
+static ltbs_cell *pair_rest(ltbs_cell *pair);
+static ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
+static unsigned int pair_is_atom(ltbs_cell *value);
+static unsigned int pair_count(ltbs_cell *list);
+static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
+static ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
+static ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
+static ltbs_cell *pair_sort(ltbs_cell *list, int (*pred)(ltbs_cell *prev, ltbs_cell *next), Arena *context);
+static unsigned int pair_length(ltbs_cell *list);
+static ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
 
 
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
-ltbs_cell *pair_head(ltbs_cell *list)
+static ltbs_cell *pair_head(ltbs_cell *list)
 {
     return list->data.pair.head;
 }
 
-ltbs_cell *pair_rest(ltbs_cell *list)
+static ltbs_cell *pair_rest(ltbs_cell *list)
 {
     return list->data.pair.rest;
 }
 
-unsigned int pair_is_atom(ltbs_cell *value)
+static ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *rest, Arena *context)
 {
-    if ( (value->type != PAIR) || (value->type != ARRA) || (value->type != HASH) )
+    ltbs_cell *new_cell = arena_alloc(context, sizeof(ltbs_cell));
+    new_cell->data.pair.head = value;
+    new_cell->data.pair.rest = rest;
+    new_cell->type = LTBS_PAIR;
+
+    return new_cell;
+}
+
+static unsigned int pair_is_atom(ltbs_cell *value)
+{
+    if ( (value->type != LTBS_PAIR) ||
+	 (value->type != LTBS_ARRAY) ||
+	 (value->type != LTBS_HASHMAP) )
 	return 0;
     else
 	return 1;
 }
 
-unsigned int pair_count(ltbs_cell *list)
+static unsigned int pair_count(ltbs_cell *list)
 {
     unsigned int result = 0;
 
@@ -345,7 +357,7 @@ unsigned int pair_count(ltbs_cell *list)
     return result;
 }
 
-ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
+static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
 {
     ltbs_cell *result = 0;
     ltbs_cell *current = list;
@@ -364,21 +376,11 @@ ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
     return result;
 }
 
-ltbs_cell *pair_cons_in_context(ltbs_cell *value, ltbs_cell *rest, Arena *context)
-{
-    ltbs_cell *new_cell = arena_alloc(context, sizeof(ltbs_cell));
-    new_cell->data.pair.head = value;
-    new_cell->data.pair.rest = rest;
-    new_cell->type = PAIR;
-
-    return new_cell;
-}
-
-ltbs_cell* pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
+static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
 {
     Arena workspace        = {0};
     ltbs_cell* result      = arena_alloc(context, sizeof(ltbs_cell));
-    result->type           = PAIR;
+    result->type           = LTBS_PAIR;
     result->data.pair.head = 0;
     result->data.pair.rest = 0;
 
@@ -387,7 +389,7 @@ ltbs_cell* pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
 	     tracker->data.pair.head != 0;
 	     tracker = pair_rest(tracker))
 	{
-	    result = pair_cons_in_context(pair_head(tracker), result, context);
+	    result = pair_cons(pair_head(tracker), result, context);
 	}
     }
 
@@ -396,7 +398,7 @@ ltbs_cell* pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
 	     tracker->data.pair.head != 0;
 	     tracker = pair_rest(tracker))
 	{
-	    result = pair_cons_in_context(pair_head(tracker), result, context);
+	    result = pair_cons(pair_head(tracker), result, context);
 	}
     }
 
@@ -404,7 +406,7 @@ ltbs_cell* pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
     return result;
 }   
 
-unsigned int pair_length(ltbs_cell* list)
+static unsigned int pair_length(ltbs_cell* list)
 {
     unsigned int result = 0;
 
@@ -413,6 +415,24 @@ unsigned int pair_length(ltbs_cell* list)
 	 tracker = pair_rest(tracker))
     {
 	result++;
+        
+    }
+
+    return result;
+}
+
+ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
+{
+    ltbs_cell* result = arena_alloc(context, sizeof(ltbs_cell));
+    result->type = LTBS_PAIR;
+    result->data.pair.head = 0;
+    result->data.pair.rest = 0;
+
+    for (ltbs_cell* tracker = list;
+	 tracker->data.pair.head != 0;
+	 tracker = pair_rest(tracker))
+    {
+	result = pair_cons(pair_head(tracker), result, context);
     }
 
     return result;
