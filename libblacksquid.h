@@ -314,6 +314,7 @@ static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell
 static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context);
 static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
+static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 
 static ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
 static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
@@ -562,6 +563,24 @@ static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cel
     arena_free(&workspace);
 
     return pair_reverse(result, context);
+}
+
+static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context)
+{
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    result->type = LTBS_PAIR;
+    result->data.pair.head = 0;
+    result->data.pair.rest = 0;
+
+    for (ltbs_cell *tracker = list;
+	 tracker->data.pair.head != 0;
+	 tracker = pair_rest(tracker))
+    {
+	if ( pred(pair_head(tracker)) )
+	    result = pair_cons(pair_head(tracker), result, context);
+    }
+
+    return result;
 }
 
 static ltbs_cell *string_from_cstring(const char *cstring, Arena *context)

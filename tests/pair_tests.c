@@ -20,6 +20,11 @@ int compare_int(ltbs_cell *val1, ltbs_cell *val2)
     return val1->data.integer > val2->data.integer;
 }
 
+int is_even(ltbs_cell *val)
+{
+    return (val->data.integer % 2) == 0;
+}
+
 int main()
 {
     Arena context = {0};
@@ -109,14 +114,29 @@ int main()
 	    printf("\n\n");
 	}
 
+	ltbs_cell *sorted = pair_sort(list, compare_int, &context);
+
 	{
 	    printf("Sorting randomized list...\n");
-	    for (ltbs_cell *tracker = pair_sort(list, compare_int, &context);
+	    for (ltbs_cell *tracker = sorted;
 		 tracker->data.pair.head != 0;
 		 tracker = pair_rest(tracker))
 		printf("%d, ", pair_head(tracker)->data.integer);
 
 	    printf("\n\n");
+	}
+
+	ltbs_cell *even_ints = pair_filter(sorted, is_even, &context);
+
+	{
+	    printf("Filtering for even numbers...\n");
+
+	    for (ltbs_cell *tracker = even_ints;
+		 tracker->data.pair.head != 0;
+		 tracker = pair_rest(tracker))
+		printf("%d, ", pair_head(tracker)->data.integer);
+
+	    printf("\n\n");	    
 	}
     }
 
