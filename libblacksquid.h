@@ -339,7 +339,6 @@ static ltbs_cell *hash_make(Arena *context);
 static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
 static int hash_compute(ltbs_string *key);
 
-#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
