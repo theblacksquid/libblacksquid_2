@@ -287,7 +287,7 @@ struct ltbs_cell
 	
 	struct ltbs_array
 	{
-	    ltbs_cell *arrdata;
+	    ltbs_cell **arrdata;
 	    unsigned int length;
 	} array;
 
@@ -325,12 +325,23 @@ static ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
 static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
 static void string_print(ltbs_cell *string);
 
-
+static ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
+static ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
+static ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
+static ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
+static ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context);
+static ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
+static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
 #include <stdlib.h>
 #include <stdio.h>
+
+static ltbs_cell *ltbs_alloc(Arena *context)
+{
+    return arena_alloc(context, sizeof(ltbs_cell));
+}
 
 static ltbs_cell *pair_head(ltbs_cell *list)
 {
@@ -715,6 +726,115 @@ static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
 
     for (unsigned int index = 0; index < length; index++)
 	buffer[index] = string->data.string.strdata[index];
+
+    return result;
+}
+
+
+static ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    int length = array->data.array.length;
+    result->type = LTBS_PAIR;
+    result->data.pair.head = 0;
+    result->data.pair.rest = 0;
+
+    for (int index = 0; index < length; index++)
+    {
+	ltbs_cell *to_add = array->data.array.arrdata[index];
+	result = pair_cons(to_add, result, context);
+    }
+
+    return result;
+}
+
+static ltbs_cell *array_ref(ltbs_cell *array, unsigned int index)
+{
+    return array->data.array.arrdata[index];
+}
+
+static ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    int length = pair_length(list);
+    ltbs_cell **buffer = arena_alloc(context, sizeof(ltbs_cell*) * length);
+    ltbs_cell *tracker = list;
+
+    result->type = LTBS_ARRAY;
+    result->data.array.length = length;
+    result->data.array.arrdata = buffer;
+
+    for (int index = 0; index < length; index++)
+    {
+	buffer[index] = pair_head(tracker);
+	tracker = pair_rest(tracker);
+    }
+
+    return result;
+}
+
+static ltbs_cell *array_reverse(ltbs_cell *array, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    int length = array->data.array.length;
+    ltbs_cell **buffer = arena_alloc(context, sizeof(ltbs_cell*) * length);
+    int inner_index = length;
+
+    result->type = LTBS_ARRAY;
+    result->data.array.arrdata = buffer;
+    result->data.array.length = length;
+    
+    for (int index = 0; index < length; index++)
+	buffer[index] = array->data.array.arrdata[inner_index--];
+
+    return result;
+}
+
+static ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    result->type = LTBS_ARRAY;
+    result->data.array.length = length;
+    result->data.array.arrdata = &array->data.array.arrdata[start];
+
+    return result;
+}
+
+static ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    int length1 = array1->data.array.length;
+    int length2 = array2->data.array.length;
+    int length_total = length1 + length2;
+    ltbs_cell **buffer = arena_alloc(context, sizeof(ltbs_cell*) * length_total);
+    
+    result->type = LTBS_ARRAY;
+    result->data.array.length = length_total;
+    result->data.array.arrdata = buffer;
+
+    for (int index = 0; index < length_total; index++)
+    {
+	if ( index < length1 )
+	    buffer[index] = array1->data.array.arrdata[index];
+	else
+	    buffer[index + length1] = array2->data.array.arrdata[index - length1];
+    }
+
+    return result;
+}
+
+static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination)
+{
+    int length = array->data.array.length;
+    ltbs_cell *result = ltbs_alloc(destination);
+    ltbs_cell **buffer = arena_alloc(destination, sizeof(ltbs_cell*) * length);
+
+    result->type = LTBS_ARRAY;
+    result->data.array.arrdata = buffer;
+    result->data.array.length = length;
+
+    for ( int index = 0; index < length; index++ )
+	buffer[index] = array->data.array.arrdata[index];
 
     return result;
 }
