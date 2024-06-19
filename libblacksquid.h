@@ -307,11 +307,14 @@ static unsigned int pair_count(ltbs_cell *list);
 static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
 static ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
 static ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
-static ltbs_cell *pair_sort(ltbs_cell *list, int (*pred)(ltbs_cell *prev, ltbs_cell *next), Arena *context);
 static unsigned int pair_length(ltbs_cell *list);
 static ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
+static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
+static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context);
+static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
+static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 
-
+/* #define LIBBLACKSQUID_IMPLEMENTATION // TODO: comment this line when shipping, only needed for LSP */
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -415,13 +418,12 @@ static unsigned int pair_length(ltbs_cell* list)
 	 tracker = pair_rest(tracker))
     {
 	result++;
-        
     }
 
     return result;
 }
 
-ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
+static ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
 {
     ltbs_cell* result = arena_alloc(context, sizeof(ltbs_cell));
     result->type = LTBS_PAIR;
@@ -436,6 +438,117 @@ ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
     }
 
     return result;
+}
+
+static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*))
+{
+    int length = pair_length(list);
+
+    if ( length == 1 )
+	return pair_head(list);
+
+    else
+    {
+	ltbs_cell *current_min = pair_head(list);
+
+	for (ltbs_cell *tracker = pair_rest(list);
+	     tracker->data.pair.head != 0;
+	     tracker = pair_rest(tracker))
+	{
+	    if ( compare(current_min, pair_head(tracker)) > 0 )
+	    {
+		current_min = pair_head(tracker);
+	    }
+	}
+
+	return current_min;
+    }
+}
+
+static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*))
+{
+    int length = pair_length(list);
+
+    if ( length == 1 )
+	return pair_head(list);
+
+    else
+    {
+	ltbs_cell *current_min = pair_head(list);
+	ltbs_cell *before_min = list;
+	ltbs_cell *follow = list;
+
+	for (ltbs_cell *tracker = pair_rest(list);
+	     tracker->data.pair.head != 0;
+	     tracker = pair_rest(tracker))
+	{   
+	    if ( compare(current_min, pair_head(tracker)) > 0 )
+	    {
+		before_min = follow;
+		current_min = pair_head(tracker);
+	    }
+
+	    follow = tracker;
+	}
+	
+	if ( current_min != pair_head(list) )
+	{
+	    before_min->data.pair.rest = pair_rest(pair_rest(before_min));
+	}
+
+	return current_min;
+    }
+}
+
+static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination)
+{
+    Arena workspace = {0};
+
+    ltbs_cell *current_list = arena_alloc(&workspace, sizeof(ltbs_cell));
+    current_list->type = LTBS_PAIR;
+    current_list->data.pair.head = 0;
+    current_list->data.pair.rest = 0;
+    
+    for (ltbs_cell *tracker = list;
+	 tracker->data.pair.head != 0;
+	 tracker = pair_rest(tracker))
+    {
+	current_list = pair_cons(pair_head(tracker), current_list, &workspace);
+    }
+    
+    arena_free(&workspace);
+
+    return pair_reverse(current_list, destination);
+}
+
+static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context)
+{
+    Arena workspace = {0};
+
+    ltbs_cell *result = arena_alloc(&workspace, sizeof(ltbs_cell));
+    ltbs_cell *list_copy = pair_copy(list, &workspace);
+    int length = pair_length(list_copy);
+
+    result->type = LTBS_PAIR;
+    result->data.pair.head = 0;
+    result->data.pair.rest = 0;
+
+    while ( length > 1 )
+    {	
+	ltbs_cell *min = pair_min_and_remove(list_copy, compare);
+	if ( min == pair_head(list_copy) )
+	    list_copy = pair_rest(list_copy);
+	
+        result = pair_cons(min, result, &workspace);
+	length = pair_length(list_copy);
+    }
+
+    if ( pair_head(list_copy) != 0 )
+	result = pair_cons(pair_head(list_copy), result, &workspace);
+    
+    arena_free(&workspace);
+
+    return pair_reverse(result, context);
 }
 
 #endif // LIBBLACKSQUID_IMPLEMENTATION
