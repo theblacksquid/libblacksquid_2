@@ -293,12 +293,14 @@ struct ltbs_cell
 
 	struct ltbs_hashmap
 	{
-	    ltbs_hashmap *children[4];
-	    ltbs_string *key;
+	    ltbs_cell *children[4];
+	    ltbs_cell *key;
 	    ltbs_cell *value;
 	} hashmap;
     } data;
 };
+
+#define HASH_FACTOR 1111111111111111111u
 
 static ltbs_cell *pair_head(ltbs_cell *pair);
 static ltbs_cell *pair_rest(ltbs_cell *pair);
@@ -332,6 +334,12 @@ static ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
 static ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context);
 static ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
 static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
+
+static ltbs_cell *hash_make(Arena *context);
+static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
+static int hash_compute(ltbs_string *key);
+
+#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -628,7 +636,9 @@ static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsign
 
 static int string_compare(ltbs_cell *string1, ltbs_cell *string2)
 {
-    if ( string1->data.string.length != string2->data.string.length )
+    if ( (string1 != 0) &&
+	 (string2 != 0) &&
+	 (string1->data.string.length != string2->data.string.length) )
 	return 0;
 
     else
@@ -837,6 +847,59 @@ static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination)
 	buffer[index] = array->data.array.arrdata[index];
 
     return result;
+}
+
+static ltbs_cell *hash_make(Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    result->type = LTBS_HASHMAP;
+    result->data.hashmap.children[0] = 0;
+    result->data.hashmap.children[1] = 0;
+    result->data.hashmap.children[2] = 0;
+    result->data.hashmap.children[3] = 0;
+    result->data.hashmap.value = 0;
+
+    return result;
+}
+
+static int hash_compute(ltbs_string *key)
+{
+    int result = 0x100;
+
+    for (unsigned int index = 0; index < key->length; index++)
+    {
+	result ^= key->strdata[index];
+	result *= HASH_FACTOR;
+    }
+
+    return result;
+}
+
+static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context)
+{
+    for (unsigned int hash = hash_compute(&key->data.string); *map; hash <<= 2)
+    {	
+	if ( ((*map)->data.hashmap.key != 0) &&
+	     string_compare(key, (*map)->data.hashmap.key) )
+	{
+	    return (*map)->data.hashmap.value;
+	}
+
+	map = &(*map)->data.hashmap.children[hash >> 30];
+    }
+
+    if ( (context != 0) && (value != 0) )
+    {
+	*map = ltbs_alloc(context);
+	(*map)->type = LTBS_HASHMAP;
+	(*map)->data.hashmap.key = key;
+	(*map)->data.hashmap.value = value;
+
+	return value;	
+    }
+    
+    else
+	return 0;
 }
 
 #endif // LIBBLACKSQUID_IMPLEMENTATION
