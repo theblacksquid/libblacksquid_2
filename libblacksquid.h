@@ -1,3 +1,12 @@
+// libblacksquid.h - v1.0 - MIT License, theblacksquid 2024
+//
+// Provides operations around data structures based on an Arena
+// Allocator, wrapped around a tagged union
+// 
+// This file provides both the interface and the implementation.
+// To instantiate the implementation,
+//      #define STB_C_LEXER_IMPLEMENTATION
+// in *ONE* source file, before #including this file.
 
 /** ARENA START  **/
 

@@ -2,7 +2,34 @@
 * Overview
 
 Just a collection of operations on a tagged union wrapping various
-data structures for use in my own projects.
+data structures for use in my own projects. Includes implementations
+of:
+
+- Counted Strings
+- Counted Arrays
+- Linked Lists
+- [[https://github.com/tsoding/arena/][Arena Allocators]]
+- [[https://nullprogram.com/blog/2023/09/30/][Hashmap Trie]]
+
+It is all packaged as an [[https://github.com/nothings/stb/blob/master/docs/stb_howto.txt][STB-style single-header library]]
+
+* Usage
+
+To have access to the structs and function declarations, simply
+include the file:
+
+#+begin_src c
+  #include "libblacksquid.h"
+#+end_src
+
+And the file that contains the main() function, define
+LIBBLACKSQUID_IMPLEMENTATION and then include the file in order to
+instantiate the implementation:
+
+#+begin_src c
+  #define LIBBLACKSQUID_IMPLEMENTATION
+  #include "libblacksquid.h"
+#+end_src
 
 * LICENSE
 
