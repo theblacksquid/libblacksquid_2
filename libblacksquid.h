@@ -253,6 +253,7 @@ void arena_free(Arena *a)
 /** ARENA END  **/
 
 #ifndef LIBBLACKSQUID_H
+#define LIBBLACKSQUID_H
 
 typedef enum ltbs_type ltbs_type;
 typedef struct ltbs_cell ltbs_cell;
