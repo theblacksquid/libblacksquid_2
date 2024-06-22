@@ -904,6 +904,9 @@ static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value,
 	(*map)->data.hashmap.key = key;
 	(*map)->data.hashmap.value = value;
 
+	for ( int index = 0; index < 4; index++ )
+	    (*map)->data.hashmap.children[index] = 0;
+
 	return value;	
     }
     
