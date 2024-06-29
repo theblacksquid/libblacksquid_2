@@ -262,7 +262,7 @@ typedef struct ltbs_array ltbs_array;
 typedef struct ltbs_pair ltbs_pair;
 // based on https://nullprogram.com/blog/2023/09/30/
 typedef struct ltbs_hashmap ltbs_hashmap;
-typedef unsigned char byte;
+typedef char byte;
 
 struct ltbs_cell
 {
@@ -357,7 +357,9 @@ static int hash_compute(ltbs_string *key);
 
 static ltbs_cell *ltbs_alloc(Arena *context)
 {
-    return arena_alloc(context, sizeof(ltbs_cell));
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    *result = (const ltbs_cell) {0};
+    return result;
 }
 
 static ltbs_cell *pair_head(ltbs_cell *list)
@@ -702,7 +704,7 @@ static ltbs_cell *string_to_list(ltbs_cell *string, Arena *context)
 
     for (unsigned int index = 0; index < length; index++)
     {
-	ltbs_cell *to_add = arena_alloc(context, 1);
+	ltbs_cell *to_add = arena_alloc(context, sizeof(ltbs_cell));
 	to_add->type = LTBS_BYTE;
 	to_add->data.byteval = string->data.string.strdata[index];
 	result = pair_cons(to_add, result, context);
