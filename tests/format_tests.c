@@ -9,17 +9,18 @@ int main()
 
     ltbs_cell byte_test = (ltbs_cell) { .type = LTBS_BYTE, .data = { .byteval = '!' } };
     ltbs_cell int_test = (ltbs_cell) { .type = LTBS_INT, .data = { .integer = 12345 }};
-    ltbs_cell float_test = (ltbs_cell) { .type = LTBS_INT, .data = { .floatval = 123.456 }};
+    ltbs_cell float_test = (ltbs_cell) { .type = LTBS_FLOAT, .data = { .floatval = (float) -123.456 }};
     ltbs_cell *string_test = string_from_cstring("Hello cruel world", &context);
-    
+
+    int array_length = 15;
     ltbs_cell *array_test = ltbs_alloc(&context);
     array_test->type = LTBS_ARRAY;
-    array_test->data.array.length = 10;
-    array_test->data.array.arrdata = arena_alloc(&context, sizeof(ltbs_cell) * 10);
+    array_test->data.array.length = array_length;
+    array_test->data.array.arrdata = arena_alloc(&context, sizeof(ltbs_cell) * array_length);
 
     {
-	for ( int index = 0; index < 10; index++ )
-	    array_test->data.array.arrdata[index] = int_from_int(index, &context);	
+	for ( int index = -7; index < array_length; index++ )
+	    array_test->data.array.arrdata[index + 7] = int_from_int(index, &context);	
     }
 
     ltbs_cell *list_test = ltbs_alloc(&context);
@@ -27,7 +28,7 @@ int main()
     list_test->data.pair = (ltbs_pair) {0};
     
     {
-	for ( int index = 0; index < 150; index++ )
+	for ( int index = 0; index < 15; index++ )
 	    list_test = pair_cons(int_from_int(index, &context), list_test, &context);
     }
 
@@ -39,7 +40,7 @@ int main()
     hash_upsert(&hashmap_test, string_from_cstring("array_test", &context), array_test, &context);
     hash_upsert(&hashmap_test, string_from_cstring("list_test", &context), list_test, &context);
 
-    ltbs_cell *actual_test = format_string("{{string_test}}, {{string_test}}, {{string_test}}, {{string_test}}...", hashmap_test, &context);
+    ltbs_cell *actual_test = format_string("{{string_test}}, there should be | {{string_test}}, some other text | {{string_test}}, {{string_test}}...", hashmap_test, &context);
     string_print(actual_test);
     printf("\n\n");
 

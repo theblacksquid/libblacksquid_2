@@ -630,11 +630,12 @@ static ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     int length = 0;
     result->type = LTBS_STRING;
-    result->data.string.strdata = (unsigned char *)cstring;
+    result->data.string.strdata = (char *)cstring;
 
     for ( byte ch = cstring[0]; ch != 0; ch = cstring[++length] ){}
 
     result->data.string.length = length;
+    
     return result;
 }
 
@@ -1076,10 +1077,12 @@ static void append_int(_ltbs_reader *state, ltbs_cell *num)
     if ( num->data.integer == 0 ) return append_byte_(state, '0');
 	
     int to_print = num->data.integer;
-    byte buffer[32];
+    byte buffer[33] = {0}; // 32 places for the number, last for the NUL terminator
     byte *end = buffer + sizeof(buffer);
     byte *beginning = end;
     ltbs_cell *to_append;
+
+    --beginning;
 
     for ( int current = to_print > 0 ? -to_print : to_print;
 	  current;
@@ -1089,7 +1092,6 @@ static void append_int(_ltbs_reader *state, ltbs_cell *num)
     if ( to_print < 0 )
 	*--beginning = '-';
 
-    beginning[end - beginning] = 0;
     to_append = string_from_cstring(beginning, state->workspace);
 
     append_string(state, to_append);
@@ -1178,13 +1180,13 @@ static void append_hashmap_(_ltbs_reader *state, ltbs_cell *hashmap, ltbs_cell *
 	append_byte_(state, ':');
 	append_string(state, hashmap->data.hashmap.key);	
     }
-    else append_byte_(state, '\n');
+    else append_byte_(state, ' ');
     
     if ( hashmap->data.hashmap.value != 0 )
     {
 	append_byte_(state, ' ');
 	append_cell(state, hashmap->data.hashmap.value);
-	append_byte_(state, '\n');	
+	append_byte_(state, ' ');	
     }
 
     for ( int index = 0; index < 4; index++ )
