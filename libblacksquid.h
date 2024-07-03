@@ -319,6 +319,12 @@ struct ltbs_cell
 
 #define HASH_FACTOR 1111111111111111111u
 
+static const ltbs_cell PAIR_NIL = (ltbs_cell)
+{
+    .type = LTBS_PAIR,
+    .data = { .pair = { .head = 0, .rest = 0 } }
+};
+
 static ltbs_cell *int_from_int(int num, Arena *context);
 static ltbs_cell *pair_head(ltbs_cell *pair);
 static ltbs_cell *pair_rest(ltbs_cell *pair);

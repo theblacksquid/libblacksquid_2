@@ -16,7 +16,8 @@
   '((format . "tests/format_tests.c")
     (string . "tests/string_tests.c")
     (hashmap . "tests/hashmap_tests.c")
-    (lists . "tests/pair_tests.c")))
+    (lists . "tests/pair_tests.c")
+    (custom . "tests/custom_tests.c")))
 
 (define cwd (string-append (getcwd) "/"))
 
