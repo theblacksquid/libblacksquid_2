@@ -12,6 +12,13 @@ int main()
     ltbs_cell float_test = (ltbs_cell) { .type = LTBS_FLOAT, .data = { .floatval = (float) -123.456 }};
     ltbs_cell *string_test = string_from_cstring("Hello cruel world", &context);
 
+    byte buffer[10] = {0};
+    ltbs_cell custom_test = (ltbs_cell)
+    {
+	.type = LTBS_CUSTOM,
+	.data = { .custom = { .data = buffer, .size = 10 } }
+    };
+
     int array_length = 15;
     ltbs_cell *array_test = ltbs_alloc(&context);
     array_test->type = LTBS_ARRAY;
@@ -39,6 +46,7 @@ int main()
     hash_upsert(&hashmap_test, string_from_cstring("string_test", &context), string_test, &context);
     hash_upsert(&hashmap_test, string_from_cstring("array_test", &context), array_test, &context);
     hash_upsert(&hashmap_test, string_from_cstring("list_test", &context), list_test, &context);
+    hash_upsert(&hashmap_test, string_from_cstring("custom_test", &context), &custom_test, &context);
 
     ltbs_cell *actual_test = format_string("{{string_test}}, there should be | {{string_test}}, some other text | {{string_test}}, {{string_test}}...", hashmap_test, &context);
     string_print(actual_test);
@@ -49,6 +57,10 @@ int main()
     printf("\n\n");
 
     actual_test = format_string("{{array_test}}", hashmap_test, &context);
+    string_print(actual_test);
+    printf("\n\n");
+
+    actual_test = format_string("{{custom_test}}", hashmap_test, &context);
     string_print(actual_test);
     printf("\n\n");
 

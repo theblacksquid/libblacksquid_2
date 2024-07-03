@@ -274,7 +274,8 @@ struct ltbs_cell
 	LTBS_STRING,
 	LTBS_ARRAY,
 	LTBS_PAIR,
-	LTBS_HASHMAP
+	LTBS_HASHMAP,
+	LTBS_CUSTOM
     } type;
 
     union
@@ -307,6 +308,12 @@ struct ltbs_cell
 	    ltbs_cell *key;
 	    ltbs_cell *value;
 	} hashmap;
+
+        struct
+	{
+	    void *data;
+	    size_t size;
+	} custom;
     } data;
 };
 
@@ -352,6 +359,7 @@ static int hash_compute(ltbs_string *key);
 
 static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
+#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -1018,6 +1026,7 @@ static void append_string(_ltbs_reader *state, ltbs_cell *string);
 static void append_array(_ltbs_reader *state, ltbs_cell *array);
 static void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap);
 static void append_cell(_ltbs_reader *state, ltbs_cell *cell);
+static void append_pointer(_ltbs_reader *state, ltbs_cell *cell);
 
 static void append_to_format_buffer(_ltbs_reader *state)
 {
@@ -1204,6 +1213,28 @@ static void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap)
     append_hashmap_(state, hashmap, 0);
 }
 
+static void append_pointer(_ltbs_reader *state, ltbs_cell *cell)
+{
+    void *to_print = cell->data.custom.data;
+    ltbs_cell size = (ltbs_cell)
+    {
+	.type = LTBS_INT,
+	.data = { .integer = (int)  cell->data.custom.size }
+    };
+    
+    append_byte_(state, '[');
+    append_int(state, &size);
+    append_byte_(state, ']');
+    append_byte_(state, ':');
+    append_byte_(state, '0');
+    append_byte_(state, 'x');
+
+    for (int value = 2*sizeof(void *) - 1; value >= 0; value--)
+    {
+	append_byte_(state, "0123456789abcdef"[((long) to_print >> (4 * value) & 15)]);
+    }
+}
+
 static void append_cell(_ltbs_reader *state, ltbs_cell *cell)
 {
     switch ( cell->type )
@@ -1215,6 +1246,7 @@ static void append_cell(_ltbs_reader *state, ltbs_cell *cell)
         case LTBS_STRING: { append_string(state, cell); } break;
         case LTBS_ARRAY: { append_array(state, cell); } break;
         case LTBS_HASHMAP: { append_hashmap(state, cell); } break;
+        case LTBS_CUSTOM: { append_pointer(state, cell); } break;
     }
 }
 
