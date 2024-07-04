@@ -10,7 +10,7 @@
     "-Wno-unused-parameter"
     "-Wno-unused-function"
     "-Wno-sign-conversion"
-    "-fsanitize=undefined"))
+    "-fsanitize=undefined,address"))
 
 (define source-files
   '((format . "tests/format_tests.c")
@@ -38,7 +38,8 @@
   (lambda (args)
     (case (string->symbol (list-ref args 1))
       ((test) (run-test args))
-      ((help) (format #t "this is a placeholder for helptext\n")))))
+      ((help) (format #t "this is a placeholder for helptext\n"))
+      (else (format #t "this is a placeholder for helptext\n")))))
 
 (define main
   (lambda (args)
