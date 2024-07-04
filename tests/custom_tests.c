@@ -43,13 +43,11 @@ int main()
     string_print(formatted);
     printf("\n");
 
-    for ( ltbs_cell *tracker = list;
-	  pair_head(tracker) != 0;
-	  tracker = pair_rest(tracker) )
+    pair_iterate(list, head, tracker,
     {
-        point *value = pair_head(tracker)->data.custom.data;
+        point *value = head->data.custom.data;
 	printf("point[%d, %d], ", value->x, value->y);
-    }
+    });
 
     printf("\n");
     

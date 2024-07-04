@@ -367,7 +367,6 @@ static int hash_compute(ltbs_string *key);
 
 static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
-#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -424,10 +423,7 @@ static unsigned int pair_count(ltbs_cell *list)
 {
     unsigned int result = 0;
 
-    for ( ltbs_cell *tracker = list; tracker != 0; tracker = pair_rest(tracker) )
-    {
-	result++;
-    }
+    pair_iterate(list, _, __, { result++; });
 
     return result;
 }
@@ -460,13 +456,6 @@ static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context
     result->data.pair.rest = 0;
 
     {
-	/* for (ltbs_cell* tracker = pair_reverse(list1, &workspace); */
-	/*      tracker->data.pair.head != 0; */
-	/*      tracker = pair_rest(tracker)) */
-	/* { */
-	/*     result = pair_cons(pair_head(tracker), result, context); */
-	/* } */
-
 	pair_iterate(pair_reverse(list1, &workspace), head, tracker,
 	{
 	    result = pair_cons(pair_head(tracker), result, context);
@@ -474,13 +463,6 @@ static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context
     }
 
     {
-	/* for (ltbs_cell* tracker = pair_reverse(list2, &workspace); */
-	/*      tracker->data.pair.head != 0; */
-	/*      tracker = pair_rest(tracker)) */
-	/* { */
-	/*     result = pair_cons(pair_head(tracker), result, context); */
-	/* } */
-
 	pair_iterate(pair_reverse(list2, &workspace), head, tracker,
         {
 
@@ -1173,13 +1155,11 @@ static void append_list(_ltbs_reader *state, ltbs_cell *list)
     append_byte_(state, '(');
     append_byte_(state, ' ');
 
-    for ( ltbs_cell *tracker = list;
-	  pair_head(tracker) != 0;
-	  tracker = pair_rest(tracker) )
+    pair_iterate(list, head, tracker,
     {
-	append_cell(state, pair_head(tracker));
+	append_cell(state, head);
 	append_byte_(state, ' ');
-    }
+    });
 
     append_byte_(state, ')');
 }
