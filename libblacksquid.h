@@ -953,6 +953,7 @@ struct _ltbs_reader
     ltbs_cell *data;
     Arena *workspace;
     int cursor;
+    int input_length;
 };
 
 static void append_to_format_buffer(_ltbs_reader *state);
@@ -965,7 +966,8 @@ static ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *contex
     Arena workspace = {0};
     ltbs_cell *result;
     ltbs_cell *output = ltbs_alloc(&workspace);
-    _ltbs_reader state = (_ltbs_reader) { format, 0, output, data_map, &workspace, 0 }; 
+    int len = string_from_cstring(format, &workspace)->data.string.length;
+    _ltbs_reader state = (_ltbs_reader) { format, 0, output, data_map, &workspace, 0, len }; 
 
     output->type = LTBS_STRING;
     output->data.string.length = initial_length;
@@ -1036,7 +1038,7 @@ static void append_pointer(_ltbs_reader *state, ltbs_cell *cell);
 
 static void append_to_format_buffer(_ltbs_reader *state)
 {
-    while ( reader_peek(state) != '\0' )
+    while ( (state->input_length > state->current_pos) && reader_peek(state) != '\0' )
     {
 	int length;
 	int start;
