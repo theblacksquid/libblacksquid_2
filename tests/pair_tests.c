@@ -39,19 +39,16 @@ int main()
 	    list = pair_cons(ltbs_new_integer(index, &context), list, &context);
 
 	{
-	    for (ltbs_cell *tracker = list;
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+	    pair_iterate(list, head, tracker, { printf("%d, ", head->data.integer); });
 
 	    printf("\n\n");
 	}
 
 	{
-	    for (ltbs_cell *tracker = pair_reverse(list, &context);
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+	    pair_iterate(pair_reverse(list, &context), head, tracker,
+            {
+		printf("%d, ", head->data.integer);
+	    });
 
 	    printf("\n\n");
 
@@ -61,20 +58,14 @@ int main()
 	list = pair_cons(ltbs_new_integer(10, &context), list, &context);
 	list = pair_cons(ltbs_new_integer(-1, &context), list, &context);
 	list = pair_cons(ltbs_new_integer(20, &context), list, &context);
-
-	/* printf("Smallest list1 value: %d\n", pair_min(list, compare_int)->data.integer); */
-	/* printf("Length before min_and_remove: %d\n", pair_length(list)); */
-	/* ltbs_cell *removed = pair_min_and_remove(list, compare_int); */
-	/* printf("Length after: %d\n", pair_length(list)); */
-	/* printf("removed value: %d\n", removed->data.integer); */
-	/* printf("Smallest list1 value: %d\n", pair_min(list, compare_int)->data.integer); */
-
+	
 	{
 	    printf("List1 current status: \n");
-	    for (ltbs_cell *tracker = pair_reverse(list, &context);
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+
+	    pair_iterate(pair_reverse(list, &context), head, tracker,
+	    {
+		printf("%d, ", head->data.integer);
+	    });
 
 	    printf("\n\n");
 	}
@@ -83,13 +74,16 @@ int main()
 
 	{
 	    printf("List1 sorted: \n");
-	    for (ltbs_cell *tracker = sorted;
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+	    pair_iterate(sorted, head, tracker, { printf("%d, ", head->data.integer); });
 
 	    printf("\n\n");
 	}
+
+
+	printf("Appending lists...\n");
+	ltbs_cell *appended = pair_append(list, sorted, &context);
+	pair_iterate(appended, head, tracker, { printf("%d, ", head->data.integer); });
+	printf("\n\n");
     }
 
     {
@@ -106,10 +100,7 @@ int main()
 	}
 
 	{
-	    for (ltbs_cell *tracker = list;
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+	    pair_iterate(list, head, tracker, { printf("%d, ", head->data.integer); });
 
 	    printf("\n\n");
 	}
@@ -118,10 +109,8 @@ int main()
 
 	{
 	    printf("Sorting randomized list...\n");
-	    for (ltbs_cell *tracker = sorted;
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+
+	    pair_iterate(sorted, head, tracker, { printf("%d, ", head->data.integer); });
 
 	    printf("\n\n");
 	}
@@ -131,10 +120,7 @@ int main()
 	{
 	    printf("Filtering for even numbers...\n");
 
-	    for (ltbs_cell *tracker = even_ints;
-		 tracker->data.pair.head != 0;
-		 tracker = pair_rest(tracker))
-		printf("%d, ", pair_head(tracker)->data.integer);
+	    pair_iterate(even_ints, head, tracker, { printf("%d, ", head->data.integer); });
 
 	    printf("\n\n");	    
 	}

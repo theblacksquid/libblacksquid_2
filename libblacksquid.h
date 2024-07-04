@@ -342,6 +342,8 @@ static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 
+#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
+
 static ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
 static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
 static int string_compare(ltbs_cell *string1, ltbs_cell *string2);
@@ -365,6 +367,7 @@ static int hash_compute(ltbs_string *key);
 
 static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
+#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -457,21 +460,32 @@ static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context
     result->data.pair.rest = 0;
 
     {
-	for (ltbs_cell* tracker = pair_reverse(list1, &workspace);
-	     tracker->data.pair.head != 0;
-	     tracker = pair_rest(tracker))
+	/* for (ltbs_cell* tracker = pair_reverse(list1, &workspace); */
+	/*      tracker->data.pair.head != 0; */
+	/*      tracker = pair_rest(tracker)) */
+	/* { */
+	/*     result = pair_cons(pair_head(tracker), result, context); */
+	/* } */
+
+	pair_iterate(pair_reverse(list1, &workspace), head, tracker,
 	{
 	    result = pair_cons(pair_head(tracker), result, context);
-	}
+	});
     }
 
     {
-	for (ltbs_cell* tracker = pair_reverse(list2, &workspace);
-	     tracker->data.pair.head != 0;
-	     tracker = pair_rest(tracker))
-	{
-	    result = pair_cons(pair_head(tracker), result, context);
-	}
+	/* for (ltbs_cell* tracker = pair_reverse(list2, &workspace); */
+	/*      tracker->data.pair.head != 0; */
+	/*      tracker = pair_rest(tracker)) */
+	/* { */
+	/*     result = pair_cons(pair_head(tracker), result, context); */
+	/* } */
+
+	pair_iterate(pair_reverse(list2, &workspace), head, tracker,
+        {
+
+	    result = pair_cons(head, result, context);
+	});
     }
 
     arena_free(&workspace);
@@ -482,12 +496,7 @@ static unsigned int pair_length(ltbs_cell* list)
 {
     unsigned int result = 0;
 
-    for (ltbs_cell* tracker = list;
-	 tracker->data.pair.head != 0;
-	 tracker = pair_rest(tracker))
-    {
-	result++;
-    }
+    pair_iterate(list, _, __, { result++; });
 
     return result;
 }
@@ -499,12 +508,7 @@ static ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
     result->data.pair.head = 0;
     result->data.pair.rest = 0;
 
-    for (ltbs_cell* tracker = list;
-	 tracker->data.pair.head != 0;
-	 tracker = pair_rest(tracker))
-    {
-	result = pair_cons(pair_head(tracker), result, context);
-    }
+    pair_iterate(list, head, _, { result = pair_cons(head, result, context); });
 
     return result;
 }
@@ -520,15 +524,13 @@ static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell
     {
 	ltbs_cell *current_min = pair_head(list);
 
-	for (ltbs_cell *tracker = pair_rest(list);
-	     tracker->data.pair.head != 0;
-	     tracker = pair_rest(tracker))
+        pair_iterate(list, head, _,
 	{
-	    if ( compare(current_min, pair_head(tracker)) > 0 )
+	    if ( compare(current_min, head) > 0 )
 	    {
-		current_min = pair_head(tracker);
+		current_min = head;
 	    }
-	}
+        });
 
 	return current_min;
     }
@@ -547,19 +549,17 @@ static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*
 	ltbs_cell *before_min = list;
 	ltbs_cell *follow = list;
 
-	for (ltbs_cell *tracker = pair_rest(list);
-	     tracker->data.pair.head != 0;
-	     tracker = pair_rest(tracker))
+	pair_iterate(pair_rest(list), head, tracker,
 	{   
-	    if ( compare(current_min, pair_head(tracker)) > 0 )
+	    if ( compare(current_min, head) > 0 )
 	    {
 		before_min = follow;
-		current_min = pair_head(tracker);
+		current_min = head;
 	    }
 
 	    follow = tracker;
-	}
-	
+	});
+
 	if ( current_min != pair_head(list) )
 	{
 	    before_min->data.pair.rest = pair_rest(pair_rest(before_min));
@@ -578,12 +578,11 @@ static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination)
     current_list->data.pair.head = 0;
     current_list->data.pair.rest = 0;
     
-    for (ltbs_cell *tracker = list;
-	 tracker->data.pair.head != 0;
-	 tracker = pair_rest(tracker))
+    pair_iterate(list, head, tracker,
     {
-	current_list = pair_cons(pair_head(tracker), current_list, &workspace);
-    }
+	current_list = pair_cons(head, current_list, &workspace);
+    })
+
     
     arena_free(&workspace);
 
@@ -627,13 +626,11 @@ static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *c
     result->data.pair.head = 0;
     result->data.pair.rest = 0;
 
-    for (ltbs_cell *tracker = list;
-	 tracker->data.pair.head != 0;
-	 tracker = pair_rest(tracker))
+    pair_iterate(list, head, tracker,
     {
-	if ( pred(pair_head(tracker)) )
-	    result = pair_cons(pair_head(tracker), result, context);
-    }
+	if ( pred(head) )
+	    result = pair_cons(head, result, context);
+    });
 
     return result;
 }
