@@ -365,7 +365,6 @@ static int hash_compute(ltbs_string *key);
 
 static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
-#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
