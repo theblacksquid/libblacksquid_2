@@ -449,28 +449,29 @@ static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
 
 static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
 {
-    Arena workspace        = {0};
+    Arena *workspace       = malloc(sizeof(Arena));
+    *workspace             = (Arena) {0};
     ltbs_cell* result      = arena_alloc(context, sizeof(ltbs_cell));
     result->type           = LTBS_PAIR;
     result->data.pair.head = 0;
     result->data.pair.rest = 0;
 
     {
-	pair_iterate(pair_reverse(list1, &workspace), head, tracker,
+	pair_iterate(pair_reverse(list1, workspace), head, tracker,
 	{
 	    result = pair_cons(pair_head(tracker), result, context);
 	});
     }
 
     {
-	pair_iterate(pair_reverse(list2, &workspace), head, tracker,
+	pair_iterate(pair_reverse(list2, workspace), head, tracker,
         {
-
 	    result = pair_cons(head, result, context);
 	});
     }
 
-    arena_free(&workspace);
+    arena_free(workspace);
+    free(workspace);
     return result;
 }   
 
@@ -553,35 +554,33 @@ static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*
 
 static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination)
 {
-    Arena workspace = {0};
-
-    ltbs_cell *current_list = arena_alloc(&workspace, sizeof(ltbs_cell));
-    current_list->type = LTBS_PAIR;
-    current_list->data.pair.head = 0;
-    current_list->data.pair.rest = 0;
+    Arena *workspace = malloc(sizeof(Arena));
+    *workspace = (Arena) {0};
+    ltbs_cell *result;
+    ltbs_cell *current_list = arena_alloc(workspace, sizeof(ltbs_cell));
+    *current_list = PAIR_NIL;
     
     pair_iterate(list, head, tracker,
     {
-	current_list = pair_cons(head, current_list, &workspace);
-    })
+	current_list = pair_cons(head, current_list, workspace);
+    });
 
-    
-    arena_free(&workspace);
-
-    return pair_reverse(current_list, destination);
+    result = pair_reverse(current_list, destination);
+    arena_free(workspace);
+    free(workspace);
+    return result;
 }
 
 static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context)
 {
-    Arena workspace = {0};
-
-    ltbs_cell *result = arena_alloc(&workspace, sizeof(ltbs_cell));
-    ltbs_cell *list_copy = pair_copy(list, &workspace);
+    Arena *workspace = malloc(sizeof(Arena));
+    *workspace = (Arena) {0};
+    ltbs_cell *result;
+    ltbs_cell *output = arena_alloc(workspace, sizeof(ltbs_cell));
+    ltbs_cell *list_copy = pair_copy(list, workspace);
     int length = pair_length(list_copy);
 
-    result->type = LTBS_PAIR;
-    result->data.pair.head = 0;
-    result->data.pair.rest = 0;
+    *output = PAIR_NIL;
 
     while ( length > 1 )
     {	
@@ -589,16 +588,17 @@ static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cel
 	if ( min == pair_head(list_copy) )
 	    list_copy = pair_rest(list_copy);
 	
-        result = pair_cons(min, result, &workspace);
+        output = pair_cons(min, output, workspace);
 	length = pair_length(list_copy);
     }
 
     if ( pair_head(list_copy) != 0 )
-	result = pair_cons(pair_head(list_copy), result, &workspace);
-    
-    arena_free(&workspace);
+	output = pair_cons(pair_head(list_copy), output, workspace);
 
-    return pair_reverse(result, context);
+    result = pair_reverse(output, context);
+    arena_free(workspace);
+    free(workspace);
+    return result;
 }
 
 static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context)
@@ -941,21 +941,23 @@ static void reader_advance(_ltbs_reader *state);
 static ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *context)
 {
     int initial_length = (8*1024);
-    Arena workspace = {0};
+    Arena *workspace = malloc(sizeof(Arena));
+    *workspace = (Arena) {0};
     ltbs_cell *result;
-    ltbs_cell *output = ltbs_alloc(&workspace);
-    int len = string_from_cstring(format, &workspace)->data.string.length;
-    _ltbs_reader state = (_ltbs_reader) { format, 0, output, data_map, &workspace, 0, len }; 
+    ltbs_cell *output = ltbs_alloc(workspace);
+    int len = string_from_cstring(format, workspace)->data.string.length;
+    _ltbs_reader state = (_ltbs_reader) { format, 0, output, data_map, workspace, 0, len }; 
 
     output->type = LTBS_STRING;
     output->data.string.length = initial_length;
-    output->data.string.strdata = arena_alloc(&workspace, initial_length);
+    output->data.string.strdata = arena_alloc(workspace, initial_length);
     append_to_format_buffer(&state);
     
     result = string_copy(output, context);
     result->data.string.length = state.cursor;
 
-    arena_free(&workspace);
+    arena_free(workspace);
+    free(workspace);
     return result;
 }
 

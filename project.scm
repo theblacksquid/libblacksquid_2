@@ -1,7 +1,7 @@
 #!/bin/env guile
 !#
 
-(define compile-flags
+(define compile-flags-default
   '("-g3"
     "-Wall"
     "-Wextra"
@@ -11,6 +11,17 @@
     "-Wno-unused-function"
     "-Wno-sign-conversion"
     "-fsanitize=undefined,address"))
+
+(define compile-flags-valgrind
+  '("-g3"
+    "-Wall"
+    "-Wextra"
+    "-Wconversion"
+    "-Wdouble-promotion"
+    "-Wno-unused-parameter"
+    "-Wno-unused-function"
+    "-Wno-sign-conversion"
+    "-fsanitize=undefined"))
 
 (define source-files
   '((format . "tests/format_tests.c")
@@ -24,15 +35,26 @@
 (define run-test
   (lambda (args)
     (let* ((keyword (string->symbol (list-ref args 2)))
-	   (flags (string-join compile-flags " "))
-	   (command (format #f "cc ~a ~a~a -o ~a && ./~a"
-			    flags
+	   (flags-default (string-join compile-flags-default " "))
+	   (command-default (format #f "cc ~a ~a~a -o ~a && ./~a"
+			    flags-default
+			    cwd
+			    (assoc-ref source-files keyword)
+			    (symbol->string keyword)
+			    (symbol->string keyword)))
+	   (flags-valgrind (string-join compile-flags-valgrind " "))
+	   (delete-command (format #f "rm ./~a" (symbol->string keyword)))
+	   (command-valgrind (format #f "cc ~a ~a~a -o ~a && valgrind ./~a"
+			    flags-valgrind
 			    cwd
 			    (assoc-ref source-files keyword)
 			    (symbol->string keyword)
 			    (symbol->string keyword))))
-      (display command) (newline)
-      (system command))))
+      (display command-default) (newline)
+      (system command-default)
+      (system delete-command)
+      (display command-valgrind) (newline)
+      (system command-valgrind))))
 
 (define command-switch
   (lambda (args)
