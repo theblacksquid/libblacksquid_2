@@ -364,6 +364,7 @@ static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
 static ltbs_cell *hash_make(Arena *context);
 static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
 static int hash_compute(ltbs_string *key);
+static ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
 
 static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
@@ -919,6 +920,21 @@ static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value,
     
     else
 	return 0;
+}
+
+static ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring)
+{
+    Arena *scratch = malloc(sizeof(Arena));
+    *scratch = (Arena) {0};
+    ltbs_cell *result = 0;
+    
+    ltbs_cell *key = string_from_cstring(cstring, scratch);
+    result = hash_upsert(map, key, 0, 0);
+    
+    arena_free(scratch);
+    free(scratch);
+
+    return result;
 }
 
 typedef struct _ltbs_reader _ltbs_reader;

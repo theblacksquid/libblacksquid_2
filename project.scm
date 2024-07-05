@@ -53,6 +53,7 @@
       (display command-default) (newline)
       (system command-default)
       (system delete-command)
+      (newline) (newline)
       (display command-valgrind) (newline)
       (system command-valgrind))))
 

@@ -43,7 +43,13 @@ int main ()
 	printf("'hello': %d\n", hash_upsert(&hashmap, hello, 0, 0)->data.integer);
 	printf("'cruel': %d\n", hash_upsert(&hashmap, cruel, 0, 0)->data.integer);
 	printf("'world': %d\n", hash_upsert(&hashmap, world, 0, 0)->data.integer);
+	printf("\n\nWith hash_lookup\n\n");
+	printf("'hello': %d\n", hash_lookup(&hashmap, "hello")->data.integer);
+	printf("'cruel': %d\n", hash_lookup(&hashmap, "cruel")->data.integer);
+	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);
     }
+
+    arena_free(&context);
     
     return 0;
 }
