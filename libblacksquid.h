@@ -325,48 +325,49 @@ static const ltbs_cell PAIR_NIL = (ltbs_cell)
     .data = { .pair = { .head = 0, .rest = 0 } }
 };
 
-static ltbs_cell *int_from_int(int num, Arena *context);
-static ltbs_cell *pair_head(ltbs_cell *pair);
-static ltbs_cell *pair_rest(ltbs_cell *pair);
-static ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
-static unsigned int pair_is_atom(ltbs_cell *value);
-static unsigned int pair_count(ltbs_cell *list);
-static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
-static ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
-static ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
-static unsigned int pair_length(ltbs_cell *list);
-static ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
-static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
-static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context);
-static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
-static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
-static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
+extern ltbs_cell *ltbs_alloc(Arena *context);
+extern ltbs_cell *int_from_int(int num, Arena *context);
+extern ltbs_cell *pair_head(ltbs_cell *pair);
+extern ltbs_cell *pair_rest(ltbs_cell *pair);
+extern ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
+extern unsigned int pair_is_atom(ltbs_cell *value);
+extern unsigned int pair_count(ltbs_cell *list);
+extern ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
+extern ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
+extern ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
+extern unsigned int pair_length(ltbs_cell *list);
+extern ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
+extern ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
+extern ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context);
+extern ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
+extern ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
+extern ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 
 #define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
 
-static ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
-static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
-static int string_compare(ltbs_cell *string1, ltbs_cell *string2);
-static ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context);
-static ltbs_cell *string_to_list(ltbs_cell *string, Arena *context);
-static ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
-static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
-static void string_print(ltbs_cell *string);
+extern ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
+extern ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
+extern int string_compare(ltbs_cell *string1, ltbs_cell *string2);
+extern ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context);
+extern ltbs_cell *string_to_list(ltbs_cell *string, Arena *context);
+extern ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
+extern ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
+extern void string_print(ltbs_cell *string);
 
-static ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
-static ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
-static ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
-static ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
-static ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context);
-static ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
-static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
+extern ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
+extern ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
+extern ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
+extern ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
+extern ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context);
+extern ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
+extern ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
 
-static ltbs_cell *hash_make(Arena *context);
-static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
-static int hash_compute(ltbs_string *key);
-static ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
+extern ltbs_cell *hash_make(Arena *context);
+extern ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
+extern int hash_compute(ltbs_string *key);
+extern ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
 
-static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
+extern ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
@@ -374,14 +375,14 @@ static ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *conte
 #include <stdlib.h>
 #include <stdio.h>
 
-static ltbs_cell *ltbs_alloc(Arena *context)
+ltbs_cell *ltbs_alloc(Arena *context)
 {
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     *result = (const ltbs_cell) {0};
     return result;
 }
 
-static ltbs_cell *int_from_int(int num, Arena *context)
+ltbs_cell *int_from_int(int num, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     result->type = LTBS_INT;
@@ -390,17 +391,17 @@ static ltbs_cell *int_from_int(int num, Arena *context)
     return result;
 }
 
-static ltbs_cell *pair_head(ltbs_cell *list)
+ltbs_cell *pair_head(ltbs_cell *list)
 {
     return list->data.pair.head;
 }
 
-static ltbs_cell *pair_rest(ltbs_cell *list)
+ltbs_cell *pair_rest(ltbs_cell *list)
 {
     return list->data.pair.rest;
 }
 
-static ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *rest, Arena *context)
+ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *rest, Arena *context)
 {
     ltbs_cell *new_cell = arena_alloc(context, sizeof(ltbs_cell));
     new_cell->data.pair.head = value;
@@ -410,7 +411,7 @@ static ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *rest, Arena *context)
     return new_cell;
 }
 
-static unsigned int pair_is_atom(ltbs_cell *value)
+unsigned int pair_is_atom(ltbs_cell *value)
 {
     if ( (value->type != LTBS_PAIR) ||
 	 (value->type != LTBS_ARRAY) ||
@@ -420,7 +421,7 @@ static unsigned int pair_is_atom(ltbs_cell *value)
 	return 1;
 }
 
-static unsigned int pair_count(ltbs_cell *list)
+unsigned int pair_count(ltbs_cell *list)
 {
     unsigned int result = 0;
 
@@ -429,7 +430,7 @@ static unsigned int pair_count(ltbs_cell *list)
     return result;
 }
 
-static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
+ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
 {
     ltbs_cell *result = 0;
     ltbs_cell *current = list;
@@ -448,7 +449,7 @@ static ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index)
     return result;
 }
 
-static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
+ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context)
 {
     Arena *workspace       = malloc(sizeof(Arena));
     *workspace             = (Arena) {0};
@@ -476,7 +477,7 @@ static ltbs_cell *pair_append(ltbs_cell* list1, ltbs_cell* list2, Arena* context
     return result;
 }   
 
-static unsigned int pair_length(ltbs_cell* list)
+unsigned int pair_length(ltbs_cell* list)
 {
     unsigned int result = 0;
 
@@ -485,7 +486,7 @@ static unsigned int pair_length(ltbs_cell* list)
     return result;
 }
 
-static ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
+ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
 {
     ltbs_cell* result = arena_alloc(context, sizeof(ltbs_cell));
     result->type = LTBS_PAIR;
@@ -497,7 +498,7 @@ static ltbs_cell* pair_reverse(ltbs_cell* list, Arena* context)
     return result;
 }
 
-static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*))
+ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*))
 {
     int length = pair_length(list);
 
@@ -520,7 +521,7 @@ static ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell
     }
 }
 
-static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*))
+ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*))
 {
     int length = pair_length(list);
 
@@ -553,7 +554,7 @@ static ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*
     }
 }
 
-static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination)
+ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination)
 {
     Arena *workspace = malloc(sizeof(Arena));
     *workspace = (Arena) {0};
@@ -572,7 +573,7 @@ static ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination)
     return result;
 }
 
-static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context)
+ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context)
 {
     Arena *workspace = malloc(sizeof(Arena));
     *workspace = (Arena) {0};
@@ -602,7 +603,7 @@ static ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cel
     return result;
 }
 
-static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context)
+ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context)
 {
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     result->type = LTBS_PAIR;
@@ -618,7 +619,7 @@ static ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *c
     return result;
 }
 
-static ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
+ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
 {
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     int length = 0;
@@ -632,7 +633,7 @@ static ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
     return result;
 }
 
-static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context)
+ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context)
 {
     if ( (string->data.string.length < start) ||
 	 (string->data.string.length < end) )
@@ -651,7 +652,7 @@ static ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsign
     }
 }
 
-static int string_compare(ltbs_cell *string1, ltbs_cell *string2)
+int string_compare(ltbs_cell *string1, ltbs_cell *string2)
 {
     if ( (string1 != 0) &&
 	 (string2 != 0) &&
@@ -670,7 +671,7 @@ static int string_compare(ltbs_cell *string1, ltbs_cell *string2)
     }
 }
 
-static ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context)
+ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context)
 {
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     int length = string1->data.string.length + string2->data.string.length;
@@ -693,13 +694,13 @@ static ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *c
     return result;
 }
 
-static void string_print(ltbs_cell *string)
+void string_print(ltbs_cell *string)
 {
     for (unsigned int index = 0; index < string->data.string.length; index++)
 	putc(string->data.string.strdata[index], stdout);
 }
 
-static ltbs_cell *string_to_list(ltbs_cell *string, Arena *context)
+ltbs_cell *string_to_list(ltbs_cell *string, Arena *context)
 {
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     unsigned int length = string->data.string.length;
@@ -719,7 +720,7 @@ static ltbs_cell *string_to_list(ltbs_cell *string, Arena *context)
     return result;
 }
 
-static ltbs_cell *string_reverse(ltbs_cell *string, Arena *context)
+ltbs_cell *string_reverse(ltbs_cell *string, Arena *context)
 {
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     int length = string->data.string.length;
@@ -740,7 +741,7 @@ static ltbs_cell *string_reverse(ltbs_cell *string, Arena *context)
     return result;
 }
 
-static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
+ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
 {
     ltbs_cell *result = arena_alloc(destination, sizeof(ltbs_cell));
     unsigned int length = string->data.string.length;
@@ -758,7 +759,7 @@ static ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
 }
 
 
-static ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
+ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     int length = array->data.array.length;
@@ -775,12 +776,12 @@ static ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
     return result;
 }
 
-static ltbs_cell *array_ref(ltbs_cell *array, unsigned int index)
+ltbs_cell *array_ref(ltbs_cell *array, unsigned int index)
 {
     return array->data.array.arrdata[index];
 }
 
-static ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context)
+ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     int length = pair_length(list);
@@ -800,7 +801,7 @@ static ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context)
     return result;
 }
 
-static ltbs_cell *array_reverse(ltbs_cell *array, Arena *context)
+ltbs_cell *array_reverse(ltbs_cell *array, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     int length = array->data.array.length;
@@ -817,7 +818,7 @@ static ltbs_cell *array_reverse(ltbs_cell *array, Arena *context)
     return result;
 }
 
-static ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context)
+ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     result->type = LTBS_ARRAY;
@@ -827,7 +828,7 @@ static ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int
     return result;
 }
 
-static ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context)
+ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     int length1 = array1->data.array.length;
@@ -850,7 +851,7 @@ static ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *cont
     return result;
 }
 
-static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination)
+ltbs_cell *array_copy(ltbs_cell *array, Arena *destination)
 {
     int length = array->data.array.length;
     ltbs_cell *result = ltbs_alloc(destination);
@@ -866,7 +867,7 @@ static ltbs_cell *array_copy(ltbs_cell *array, Arena *destination)
     return result;
 }
 
-static ltbs_cell *hash_make(Arena *context)
+ltbs_cell *hash_make(Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     result->type = LTBS_HASHMAP;
@@ -879,7 +880,7 @@ static ltbs_cell *hash_make(Arena *context)
     return result;
 }
 
-static int hash_compute(ltbs_string *key)
+int hash_compute(ltbs_string *key)
 {
     int result = 0x100;
 
@@ -892,7 +893,7 @@ static int hash_compute(ltbs_string *key)
     return result;
 }
 
-static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context)
+ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context)
 {
     for (unsigned int hash = hash_compute(&key->data.string); *map; hash <<= 2)
     {	
@@ -922,7 +923,7 @@ static ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value,
 	return 0;
 }
 
-static ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring)
+ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring)
 {
     Arena *scratch = malloc(sizeof(Arena));
     *scratch = (Arena) {0};
@@ -950,11 +951,11 @@ struct _ltbs_reader
     int input_length;
 };
 
-static void append_to_format_buffer(_ltbs_reader *state);
-static byte reader_peek(_ltbs_reader *state);
-static void reader_advance(_ltbs_reader *state);
+void append_to_format_buffer(_ltbs_reader *state);
+byte reader_peek(_ltbs_reader *state);
+void reader_advance(_ltbs_reader *state);
 
-static ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *context)
+ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *context)
 {
     int initial_length = (8*1024);
     Arena *workspace = malloc(sizeof(Arena));
@@ -977,7 +978,7 @@ static ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *contex
     return result;
 }
 
-static void skip_until_format_start(_ltbs_reader *state)
+void skip_until_format_start(_ltbs_reader *state)
 {
     byte previous = 0;
     byte current = reader_peek(state);
@@ -1000,7 +1001,7 @@ static void skip_until_format_start(_ltbs_reader *state)
     }
 }
 
-static void skip_until_format_end(_ltbs_reader *state)
+void skip_until_format_end(_ltbs_reader *state)
 {
     byte previous = 0;
     byte current = reader_peek(state);
@@ -1019,20 +1020,20 @@ static void skip_until_format_end(_ltbs_reader *state)
     }    
 }
 
-static byte reader_peek(_ltbs_reader *state) { return state->input[state->current_pos]; }
-static void reader_advance(_ltbs_reader *state) { state->current_pos++; }
+byte reader_peek(_ltbs_reader *state) { return state->input[state->current_pos]; }
+void reader_advance(_ltbs_reader *state) { state->current_pos++; }
 
-static void append_byte(_ltbs_reader *state, ltbs_cell *b);
-static void append_int(_ltbs_reader *state, ltbs_cell *num);
-static void append_float(_ltbs_reader *state, ltbs_cell *num);
-static void append_list(_ltbs_reader *state, ltbs_cell *list);
-static void append_string(_ltbs_reader *state, ltbs_cell *string);
-static void append_array(_ltbs_reader *state, ltbs_cell *array);
-static void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap);
-static void append_cell(_ltbs_reader *state, ltbs_cell *cell);
-static void append_pointer(_ltbs_reader *state, ltbs_cell *cell);
+void append_byte(_ltbs_reader *state, ltbs_cell *b);
+void append_int(_ltbs_reader *state, ltbs_cell *num);
+void append_float(_ltbs_reader *state, ltbs_cell *num);
+void append_list(_ltbs_reader *state, ltbs_cell *list);
+void append_string(_ltbs_reader *state, ltbs_cell *string);
+void append_array(_ltbs_reader *state, ltbs_cell *array);
+void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap);
+void append_cell(_ltbs_reader *state, ltbs_cell *cell);
+void append_pointer(_ltbs_reader *state, ltbs_cell *cell);
 
-static void append_to_format_buffer(_ltbs_reader *state)
+void append_to_format_buffer(_ltbs_reader *state)
 {
     while ( (state->input_length > state->current_pos) && reader_peek(state) != '\0' )
     {
@@ -1058,7 +1059,7 @@ static void append_to_format_buffer(_ltbs_reader *state)
     }
 }
 
-static void append_string(_ltbs_reader *state, ltbs_cell *string)
+void append_string(_ltbs_reader *state, ltbs_cell *string)
 {
     byte *output = &state->output->data.string.strdata[state->cursor];
     int capacity = state->output->data.string.length;
@@ -1073,19 +1074,19 @@ static void append_string(_ltbs_reader *state, ltbs_cell *string)
     }
 }
 
-static void append_byte(_ltbs_reader *state, ltbs_cell *b)
+void append_byte(_ltbs_reader *state, ltbs_cell *b)
 {
     state->output->data.string.strdata[state->cursor] = b->data.byteval;
     state->cursor++;
 }
 
-static void append_byte_(_ltbs_reader *state, byte c)
+void append_byte_(_ltbs_reader *state, byte c)
 {
     state->output->data.string.strdata[state->cursor] = c;
     state->cursor++;
 }
 
-static void append_int(_ltbs_reader *state, ltbs_cell *num)
+void append_int(_ltbs_reader *state, ltbs_cell *num)
 {
     if ( num->data.integer == 0 ) return append_byte_(state, '0');
 	
@@ -1110,7 +1111,7 @@ static void append_int(_ltbs_reader *state, ltbs_cell *num)
     append_string(state, to_append);
 }
 
-static void append_float(_ltbs_reader *state, ltbs_cell *num)
+void append_float(_ltbs_reader *state, ltbs_cell *num)
 {
     int precision = 1000000; // 6 decimal places
     float value = num->data.floatval;
@@ -1146,7 +1147,7 @@ static void append_float(_ltbs_reader *state, ltbs_cell *num)
     append_int(state, &to_append);
 }
 
-static void append_array(_ltbs_reader *state, ltbs_cell *array)
+void append_array(_ltbs_reader *state, ltbs_cell *array)
 {
     ltbs_cell length = (ltbs_cell)
     {
@@ -1168,7 +1169,7 @@ static void append_array(_ltbs_reader *state, ltbs_cell *array)
     append_byte_(state, '}');
 }
 
-static void append_list(_ltbs_reader *state, ltbs_cell *list)
+void append_list(_ltbs_reader *state, ltbs_cell *list)
 {
     append_byte_(state, '(');
     append_byte_(state, ' ');
@@ -1182,7 +1183,7 @@ static void append_list(_ltbs_reader *state, ltbs_cell *list)
     append_byte_(state, ')');
 }
 
-static void append_hashmap_(_ltbs_reader *state, ltbs_cell *hashmap, ltbs_cell *parent)
+void append_hashmap_(_ltbs_reader *state, ltbs_cell *hashmap, ltbs_cell *parent)
 {
     if ( parent == 0 ) append_byte_(state, '{');
 
@@ -1210,12 +1211,12 @@ static void append_hashmap_(_ltbs_reader *state, ltbs_cell *hashmap, ltbs_cell *
     if ( parent == 0 ) append_byte_(state, '}');
 }
 
-static void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap)
+void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap)
 {
     append_hashmap_(state, hashmap, 0);
 }
 
-static void append_pointer(_ltbs_reader *state, ltbs_cell *cell)
+void append_pointer(_ltbs_reader *state, ltbs_cell *cell)
 {
     void *to_print = cell->data.custom.data;
     ltbs_cell size = (ltbs_cell)
@@ -1237,7 +1238,7 @@ static void append_pointer(_ltbs_reader *state, ltbs_cell *cell)
     }
 }
 
-static void append_cell(_ltbs_reader *state, ltbs_cell *cell)
+void append_cell(_ltbs_reader *state, ltbs_cell *cell)
 {
     switch ( cell->type )
     {
