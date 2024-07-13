@@ -49,6 +49,23 @@ int main ()
 	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);
     }
 
+    {
+	ltbs_cell *hashmap;
+	printf("Doing bulk insert...\n");
+
+	hashmap_from_kvps(
+	    hashmap, &context,
+	    {"hello", int_from_int(42, &context)},
+	    {"cruel", int_from_int(190, &context)},
+	    {"world", int_from_int(999, &context)}
+        );
+
+	printf("\n\nWith hashmap_from_kvps\n\n");
+	printf("'hello': %d\n", hash_lookup(&hashmap, "hello")->data.integer);
+	printf("'cruel': %d\n", hash_lookup(&hashmap, "cruel")->data.integer);
+	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);	
+    }
+
     arena_free(&context);
     
     return 0;

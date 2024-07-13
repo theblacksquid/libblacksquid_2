@@ -262,6 +262,7 @@ typedef struct ltbs_array ltbs_array;
 typedef struct ltbs_pair ltbs_pair;
 // based on https://nullprogram.com/blog/2023/09/30/
 typedef struct ltbs_hashmap ltbs_hashmap;
+typedef struct ltbs_keyvaluepair ltbs_keyvaluepair;
 typedef char byte;
 
 struct ltbs_cell
@@ -317,6 +318,12 @@ struct ltbs_cell
     } data;
 };
 
+struct ltbs_keyvaluepair
+{
+    byte *key;
+    ltbs_cell *value;
+};
+
 #define HASH_FACTOR 1111111111111111111u
 
 static const ltbs_cell PAIR_NIL = (ltbs_cell)
@@ -366,6 +373,22 @@ extern ltbs_cell *hash_make(Arena *context);
 extern ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
 extern int hash_compute(ltbs_string *key);
 extern ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
+
+#define hashmap_from_kvps(hashmap, context, ...) {                          \
+    hashmap = hash_make(context);	                                    \
+    ltbs_keyvaluepair *kvp_list =                                           \
+	(ltbs_keyvaluepair[]) { __VA_ARGS__, {0,0} };			    \
+    for (int index = 0; kvp_list[index].key != 0; index++ )                 \
+    {                                                                       \
+        ltbs_cell *key = string_from_cstring(kvp_list[index].key, context); \
+        hash_upsert(                                                        \
+	    &hashmap,                                                       \
+            key,                                                            \
+	    kvp_list[index].value,                                          \
+	    context                                                         \
+       );                                                                   \
+    }						                            \
+}					                                    \
 
 extern ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 
