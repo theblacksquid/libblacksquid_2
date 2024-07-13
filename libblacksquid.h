@@ -343,7 +343,7 @@ extern ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 extern ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 extern ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 
-#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
+#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; tracker && pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
 
 extern ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
 extern ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
