@@ -918,12 +918,29 @@ int hash_compute(ltbs_string *key)
 
 ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context)
 {
+    ltbs_cell *result = 0;
+    
     for (unsigned int hash = hash_compute(&key->data.string); *map; hash <<= 2)
     {	
 	if ( ((*map)->data.hashmap.key != 0) &&
 	     string_compare(key, (*map)->data.hashmap.key) )
 	{
-	    return (*map)->data.hashmap.value;
+	    if ( (context != 0) && (value != 0) )
+	    {
+		*map = ltbs_alloc(context);
+		(*map)->type = LTBS_HASHMAP;
+		(*map)->data.hashmap.key = key;
+		(*map)->data.hashmap.value = value;
+
+		for ( int index = 0; index < 4; index++ )
+		    (*map)->data.hashmap.children[index] = 0;
+
+		result = value;
+	        break;
+	    }
+
+	    result = (*map)->data.hashmap.value;
+	    break;
 	}
 
 	map = &(*map)->data.hashmap.children[hash >> 30];
@@ -939,11 +956,10 @@ ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena 
 	for ( int index = 0; index < 4; index++ )
 	    (*map)->data.hashmap.children[index] = 0;
 
-	return value;	
+	result = value;
     }
     
-    else
-	return 0;
+    return result;
 }
 
 ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring)
