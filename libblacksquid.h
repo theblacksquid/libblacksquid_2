@@ -647,11 +647,16 @@ ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     int length = 0;
     result->type = LTBS_STRING;
-    result->data.string.strdata = (char *)cstring;
-
+    
     for ( byte ch = cstring[0]; ch != 0; ch = cstring[++length] ){}
 
+    byte *buffer = arena_alloc(context, length);
+
+    result->data.string.strdata = buffer;
     result->data.string.length = length;
+
+    for ( int index = 0; index < length; index++ )
+	buffer[index] = cstring[index];
     
     return result;
 }
