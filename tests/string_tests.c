@@ -30,6 +30,16 @@ int main()
     ltbs_cell *reversed = string_reverse(appended, &context);
 
     string_print(reversed);
+
+    ltbs_cell *split = string_split(string_from_cstring("this is an example", &context), ' ', &context);
+
+    printf("\n (");
+    pair_iterate(split, head, tracker,
+    {
+	string_print(head);
+	printf(", ");
+    });
+    printf(") \n");
     
     arena_free(&context);
     return 0;

@@ -350,7 +350,7 @@ extern ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 extern ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 extern ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 
-#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; tracker && pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
+#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
 
 extern ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
 extern ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
@@ -360,6 +360,7 @@ extern ltbs_cell *string_to_list(ltbs_cell *string, Arena *context);
 extern ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
 extern ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
 extern void string_print(ltbs_cell *string);
+extern ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
 
 extern ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
 extern ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
@@ -389,8 +390,9 @@ extern ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
        );                                                                   \
     }						                            \
 }					                                    \
-
+    
 extern ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
+extern ltbs_cell *format_serialize(char *format, ltbs_cell *data_map, Arena *context);
 
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
@@ -786,6 +788,44 @@ ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
     return result;
 }
 
+ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context)
+{
+    ltbs_cell *copy = string_copy(string, context);
+    ltbs_cell *result = ltbs_alloc(context); *result = PAIR_NIL;
+    byte *buffer_copy = copy->data.string.strdata;
+    
+    unsigned int index = 0;
+    unsigned int current_length = 0;
+
+    while ( index < copy->data.string.length )
+    {
+	if ( buffer_copy[index] == splitter )
+	{
+	    ltbs_cell *to_add = ltbs_alloc(context);
+	    to_add->type = LTBS_STRING;
+	    to_add->data.string.strdata = &buffer_copy[index - current_length];
+	    to_add->data.string.length = current_length;
+	    buffer_copy[index] = '\0';
+	    result = pair_cons(to_add, result, context);
+
+	    current_length = 0;
+	}
+
+	else current_length++;
+	
+	index++;
+    }
+
+    ltbs_cell *to_add = ltbs_alloc(context);
+    to_add->type = LTBS_STRING;
+    to_add->data.string.strdata = &buffer_copy[index - current_length];
+    to_add->data.string.length = current_length;
+    buffer_copy[index] = '\0';
+    result = pair_cons(to_add, result, context);
+    result = pair_reverse(result, context);
+
+    return result;
+}
 
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
 {
