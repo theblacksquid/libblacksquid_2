@@ -374,6 +374,7 @@ extern ltbs_cell *hash_make(Arena *context);
 extern ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
 extern int hash_compute(ltbs_string *key);
 extern ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
+extern ltbs_cell *hash_keys(ltbs_cell **map, Arena *context);
 
 #define hashmap_from_kvps(hashmap, context, ...) {                          \
     hashmap = hash_make(context);	                                    \
@@ -1019,6 +1020,25 @@ ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring)
     arena_free(scratch);
     free(scratch);
 
+    return result;
+}
+
+void __hash_keys_impl(ltbs_cell **map, ltbs_cell **out_list, Arena *context)
+{
+    ltbs_cell *key = (*map)->data.hashmap.key;
+    *out_list = pair_cons(key, *out_list, context);
+
+    for (int index = 0; index < 4; index++)
+    {
+	ltbs_cell *child = (*map)->data.hashmap.children[index];
+	if ( child != 0 ) __hash_keys_impl(&child, out_list, context);
+    }
+}
+
+ltbs_cell *hash_keys(ltbs_cell **map, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context); *result = PAIR_NIL;
+    __hash_keys_impl(map, &result, context);
     return result;
 }
 

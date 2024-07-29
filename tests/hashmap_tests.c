@@ -63,7 +63,16 @@ int main ()
 	printf("\n\nWith hashmap_from_kvps\n\n");
 	printf("'hello': %d\n", hash_lookup(&hashmap, "hello")->data.integer);
 	printf("'cruel': %d\n", hash_lookup(&hashmap, "cruel")->data.integer);
-	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);	
+	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);
+
+	ltbs_cell *keys = hash_keys(&hashmap, &context);
+
+	printf("keys: ( ");
+	pair_iterate(keys, head, tracker,
+        {
+	    string_print(head); printf(" ");
+	});
+	printf(")\n");
     }
 
     arena_free(&context);

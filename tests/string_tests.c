@@ -36,7 +36,9 @@ int main()
     printf("\n (");
     pair_iterate(split, head, tracker,
     {
+	printf("\"");
 	string_print(head);
+	printf("\"");
 	printf(", ");
     });
     printf(") \n");
