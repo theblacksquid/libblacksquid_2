@@ -973,9 +973,10 @@ ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena 
 	{
 	    if ( (context != 0) && (value != 0) )
 	    {
+		ltbs_cell *key_copy = string_copy(key, context);
 		*map = ltbs_alloc(context);
 		(*map)->type = LTBS_HASHMAP;
-		(*map)->data.hashmap.key = key;
+		(*map)->data.hashmap.key = key_copy;
 		(*map)->data.hashmap.value = value;
 
 		for ( int index = 0; index < 4; index++ )
@@ -994,9 +995,10 @@ ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena 
 
     if ( (context != 0) && (value != 0) )
     {
+	ltbs_cell *key_copy = string_copy(key, context);
 	*map = ltbs_alloc(context);
 	(*map)->type = LTBS_HASHMAP;
-	(*map)->data.hashmap.key = key;
+	(*map)->data.hashmap.key = key_copy;
 	(*map)->data.hashmap.value = value;
 
 	for ( int index = 0; index < 4; index++ )
