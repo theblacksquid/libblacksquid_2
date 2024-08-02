@@ -361,7 +361,7 @@ extern ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
 extern ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
 extern void string_print(ltbs_cell *string);
 extern ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
-
+extern ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
 extern ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
 extern ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
 extern ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
@@ -811,6 +811,64 @@ ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context)
 
 	    current_length = 0;
 	}
+
+	else current_length++;
+	
+	index++;
+    }
+
+    ltbs_cell *to_add = ltbs_alloc(context);
+    to_add->type = LTBS_STRING;
+    to_add->data.string.strdata = &buffer_copy[index - current_length];
+    to_add->data.string.length = current_length;
+    buffer_copy[index] = '\0';
+    result = pair_cons(to_add, result, context);
+    result = pair_reverse(result, context);
+
+    return result;
+}
+
+int string_contains(ltbs_cell *string, byte c)
+{
+    int result = 0;
+    byte *buffer = string->data.string.strdata;
+    int length = string->data.string.length;
+
+    for ( int index = 0; index < length; index++ )
+    {
+	if ( buffer[index] == c ) result = 1;
+    }
+
+    return result;
+}
+
+ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context)
+{
+    ltbs_cell *copy = string_copy(string, context);
+    ltbs_cell *result = ltbs_alloc(context); *result = PAIR_NIL;
+    byte *buffer_copy = copy->data.string.strdata;
+    byte *buffer = splitter->data.string.strdata;
+    int length = splitter->data.string.length;
+    
+    unsigned int index = 0;
+    unsigned int current_length = 0;
+
+    while ( index < copy->data.string.length )
+    {
+	if ( string_contains(splitter, buffer_copy[index]) && (current_length != 0) )
+	{
+	    ltbs_cell *to_add = ltbs_alloc(context);
+	    to_add->type = LTBS_STRING;
+	    to_add->data.string.strdata = &buffer_copy[index - current_length];
+	    to_add->data.string.length = current_length;
+	    buffer_copy[index] = '\0';
+	    result = pair_cons(to_add, result, context);
+
+	    current_length = 0;
+	}
+
+	else if (string_contains(splitter, buffer_copy[index]))
+	    current_length = 0;
 
 	else current_length++;
 	

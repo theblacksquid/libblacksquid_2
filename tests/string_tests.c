@@ -32,6 +32,11 @@ int main()
     string_print(reversed);
 
     ltbs_cell *split = string_split(string_from_cstring("this is an example", &context), ' ', &context);
+    ltbs_cell *split2 = string_split_multi(
+	string_from_cstring("this \n\t\tis\nan\t example", &context),
+	string_from_cstring("\t\n\r ", &context),
+	&context
+    );
 
     printf("\n (");
     pair_iterate(split, head, tracker,
@@ -42,6 +47,18 @@ int main()
 	printf(", ");
     });
     printf(") \n");
+
+    printf("\n (");
+    pair_iterate(split2, head, tracker,
+    {
+	printf("\"");
+	string_print(head);
+	printf("\"");
+	printf(", ");
+    });
+    printf(") \n");
+
+    
     
     arena_free(&context);
     return 0;
