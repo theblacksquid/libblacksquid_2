@@ -385,12 +385,18 @@ struct ltbs_array_vt
 
 struct ltbs_hashmap_vt
 {
-    
+    ltbs_cell *(*new)(Arena *context);
+    ltbs_cell *(*upsert)(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
+    int (*compute)(ltbs_string *key);
+    ltbs_cell *(*lookup)(ltbs_cell **map, byte *cstring);
+    ltbs_cell *(*keys)(ltbs_cell **map, Arena *context);
 };
+
+extern struct ltbs_hashmap_vt Hash_Vt;
 
 #endif // LIBBLACKSQUID_H
 
-#define LIBBLACKSQUID_IMPLEMENTATION
+/* #define LIBBLACKSQUID_IMPLEMENTATION */
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -464,6 +470,15 @@ ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena 
 int hash_compute(ltbs_string *key);
 ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
 ltbs_cell *hash_keys(ltbs_cell **map, Arena *context);
+
+struct ltbs_hashmap_vt Hash_Vt = (struct ltbs_hashmap_vt)
+{
+    .new = hash_make,
+    .upsert = hash_upsert,
+    .compute = hash_compute,
+    .lookup = hash_lookup,
+    .keys = hash_keys,
+};
 
 ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
 ltbs_cell *format_serialize(char *format, ltbs_cell *data_map, Arena *context);

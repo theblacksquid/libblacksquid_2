@@ -11,13 +11,13 @@ int main ()
     Arena context = {0};
 
     {
-	ltbs_cell *hashmap = hash_make(&context);
-	ltbs_cell *hello = string_from_cstring("hello", &context);
-	ltbs_cell *cruel = string_from_cstring("cruel", &context);
-	ltbs_cell *world = string_from_cstring("world", &context);
+	ltbs_cell *hashmap = Hash_Vt.new(&context);
+	ltbs_cell *hello = String_Vt.cs("hello", &context);
+	ltbs_cell *cruel = String_Vt.cs("cruel", &context);
+	ltbs_cell *world = String_Vt.cs("world", &context);
 
 	printf("Inserting 'hello': 42\n");
-	hash_upsert(
+	Hash_Vt.upsert(
 	    &hashmap,
 	    hello,
 	    &((ltbs_cell) { .data = { .integer = 42 } }),
@@ -25,7 +25,7 @@ int main ()
 	);
 
 	printf("Inserting 'cruel': 21\n");
-	hash_upsert(
+	Hash_Vt.upsert(
 	    &hashmap,
 	    cruel,
 	    &((ltbs_cell) { .data = { .integer = 21 } }),
@@ -33,20 +33,20 @@ int main ()
 	);
 
 	printf("Inserting 'world': 64\n");
-	hash_upsert(
+	Hash_Vt.upsert(
 	    &hashmap,
 	    world,
 	    &((ltbs_cell) { .data = { .integer = 64 } }),
 	    &context
 	);
 
-	printf("'hello': %d\n", hash_upsert(&hashmap, hello, 0, 0)->data.integer);
-	printf("'cruel': %d\n", hash_upsert(&hashmap, cruel, 0, 0)->data.integer);
-	printf("'world': %d\n", hash_upsert(&hashmap, world, 0, 0)->data.integer);
-	printf("\n\nWith hash_lookup\n\n");
-	printf("'hello': %d\n", hash_lookup(&hashmap, "hello")->data.integer);
-	printf("'cruel': %d\n", hash_lookup(&hashmap, "cruel")->data.integer);
-	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);
+	printf("'hello': %d\n", Hash_Vt.upsert(&hashmap, hello, 0, 0)->data.integer);
+	printf("'cruel': %d\n", Hash_Vt.upsert(&hashmap, cruel, 0, 0)->data.integer);
+	printf("'world': %d\n", Hash_Vt.upsert(&hashmap, world, 0, 0)->data.integer);
+	printf("\n\nWith Hash_Vt.lookup\n\n");
+	printf("'hello': %d\n", Hash_Vt.lookup(&hashmap, "hello")->data.integer);
+	printf("'cruel': %d\n", Hash_Vt.lookup(&hashmap, "cruel")->data.integer);
+	printf("'world': %d\n", Hash_Vt.lookup(&hashmap, "world")->data.integer);
     }
 
     {
@@ -61,16 +61,16 @@ int main ()
         );
 
 	printf("\n\nWith hashmap_from_kvps\n\n");
-	printf("'hello': %d\n", hash_lookup(&hashmap, "hello")->data.integer);
-	printf("'cruel': %d\n", hash_lookup(&hashmap, "cruel")->data.integer);
-	printf("'world': %d\n", hash_lookup(&hashmap, "world")->data.integer);
+	printf("'hello': %d\n", Hash_Vt.lookup(&hashmap, "hello")->data.integer);
+	printf("'cruel': %d\n", Hash_Vt.lookup(&hashmap, "cruel")->data.integer);
+	printf("'world': %d\n", Hash_Vt.lookup(&hashmap, "world")->data.integer);
 
-	ltbs_cell *keys = hash_keys(&hashmap, &context);
+	ltbs_cell *keys = Hash_Vt.keys(&hashmap, &context);
 
 	printf("keys: ( ");
 	pair_iterate(keys, head, tracker,
         {
-	    string_print(head); printf(" ");
+	    String_Vt.print(head); printf(" ");
 	});
 	printf(")\n");
     }
