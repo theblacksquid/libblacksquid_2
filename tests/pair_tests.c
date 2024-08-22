@@ -36,7 +36,7 @@ int main()
 	list->data.pair.rest = 0;
 	
 	for (int index = 0; index < 10; index++)
-	    list = pair_cons(ltbs_new_integer(index, &context), list, &context);
+	    list = List_Vt.cons(ltbs_new_integer(index, &context), list, &context);
 
 	{
 	    pair_iterate(list, head, tracker, { printf("%d, ", head->data.integer); });
@@ -45,19 +45,19 @@ int main()
 	}
 
 	{
-	    pair_iterate(pair_reverse(list, &context), head, tracker,
+	    pair_iterate(List_Vt.reverse(list, &context), head, tracker,
             {
 		printf("%d, ", head->data.integer);
 	    });
 
 	    printf("\n\n");
 
-	    printf("Smallest list1 value: %d\n", pair_min(list, compare_int)->data.integer);
+	    printf("Smallest list1 value: %d\n", List_Vt.min(list, compare_int)->data.integer);
 	}
 
-	list = pair_cons(ltbs_new_integer(10, &context), list, &context);
-	list = pair_cons(ltbs_new_integer(-1, &context), list, &context);
-	list = pair_cons(ltbs_new_integer(20, &context), list, &context);
+	list = List_Vt.cons(ltbs_new_integer(10, &context), list, &context);
+	list = List_Vt.cons(ltbs_new_integer(-1, &context), list, &context);
+	list = List_Vt.cons(ltbs_new_integer(20, &context), list, &context);
 	
 	{
 	    printf("List1 current status: \n");
@@ -81,7 +81,7 @@ int main()
 
 
 	printf("Appending lists...\n");
-	ltbs_cell *appended = pair_append(list, sorted, &context);
+	ltbs_cell *appended = List_Vt.append(list, sorted, &context);
 	pair_iterate(appended, head, tracker, { printf("%d, ", head->data.integer); });
 	printf("\n\n");
     }
@@ -96,7 +96,7 @@ int main()
 	{
 	    printf("creating randomized list... \n");
 	    for (int index = 0; index < 20; index++)
-		list = pair_cons(ltbs_new_integer(rand() % 100, &context), list, &context);
+		list = List_Vt.cons(ltbs_new_integer(rand() % 100, &context), list, &context);
 	}
 
 	{
@@ -105,7 +105,7 @@ int main()
 	    printf("\n\n");
 	}
 
-	ltbs_cell *sorted = pair_sort(list, compare_int, &context);
+	ltbs_cell *sorted = List_Vt.sort(list, compare_int, &context);
 
 	{
 	    printf("Sorting randomized list...\n");
@@ -115,7 +115,7 @@ int main()
 	    printf("\n\n");
 	}
 
-	ltbs_cell *even_ints = pair_filter(sorted, is_even, &context);
+	ltbs_cell *even_ints = List_Vt.filter(sorted, is_even, &context);
 
 	{
 	    printf("Filtering for even numbers...\n");

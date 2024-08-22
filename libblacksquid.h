@@ -263,7 +263,29 @@ typedef struct ltbs_pair ltbs_pair;
 // based on https://nullprogram.com/blog/2023/09/30/
 typedef struct ltbs_hashmap ltbs_hashmap;
 typedef struct ltbs_keyvaluepair ltbs_keyvaluepair;
+typedef int (*compare_fn)(ltbs_cell*, ltbs_cell*);
+typedef int (*pred_fn)(ltbs_cell*);
 typedef char byte;
+
+#define HASH_FACTOR 1111111111111111111u
+
+#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
+
+#define hashmap_from_kvps(hashmap, context, ...) {                          \
+    hashmap = hash_make(context);	                                    \
+    ltbs_keyvaluepair *kvp_list =                                           \
+	(ltbs_keyvaluepair[]) { __VA_ARGS__, {0,0} };			    \
+    for (int index = 0; kvp_list[index].key != 0; index++ )                 \
+    {                                                                       \
+        ltbs_cell *key = string_from_cstring(kvp_list[index].key, context); \
+        hash_upsert(                                                        \
+	    &hashmap,                                                       \
+            key,                                                            \
+	    kvp_list[index].value,                                          \
+	    context                                                         \
+       );                                                                   \
+    }						                            \
+}					                                    \
 
 struct ltbs_cell
 {
@@ -324,82 +346,111 @@ struct ltbs_keyvaluepair
     ltbs_cell *value;
 };
 
-#define HASH_FACTOR 1111111111111111111u
+struct ltbs_list_vt
+{
+    ltbs_cell *(*head)(ltbs_cell *pair);
+    ltbs_cell *(*rest)(ltbs_cell *pair);
+    ltbs_cell *(*cons)(ltbs_cell *value, ltbs_cell *pair, Arena *context);
+    unsigned int (*count)(ltbs_cell *pair);
+    ltbs_cell *(*by_index)(ltbs_cell *pair, unsigned int index);
+    ltbs_cell *(*reverse)(ltbs_cell *pair, Arena *context);
+    ltbs_cell *(*append)(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
+    ltbs_cell *(*min)(ltbs_cell *list, compare_fn compare);
+    ltbs_cell *(*sort)(ltbs_cell *list, compare_fn compare, Arena *context);
+    ltbs_cell *(*filter)(ltbs_cell *list, pred_fn pred, Arena *context);
+};
+
+extern struct ltbs_list_vt List_Vt;
+
+struct ltbs_string_vt
+{
+    
+};
+
+struct ltbs_array_vt
+{
+    
+};
+
+struct ltbs_hashmap_vt
+{
+    
+};
+
+#endif // LIBBLACKSQUID_H
+
+#define LIBBLACKSQUID_IMPLEMENTATION
+#ifdef LIBBLACKSQUID_IMPLEMENTATION
+#define ARENA_IMPLEMENTATION
+
+ltbs_cell *ltbs_alloc(Arena *context);
+ltbs_cell *int_from_int(int num, Arena *context);
+ltbs_cell *pair_head(ltbs_cell *pair);
+ltbs_cell *pair_rest(ltbs_cell *pair);
+ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
+unsigned int pair_is_atom(ltbs_cell *value);
+unsigned int pair_count(ltbs_cell *list);
+ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
+ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
+ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
+unsigned int pair_length(ltbs_cell *list);
+ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
+ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
+ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context);
+ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
+ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
+ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
+
+struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
+{
+    .head = pair_head,
+    .rest = pair_rest,
+    .cons = pair_cons,
+    .by_index = pair_by_index,
+    .count = pair_count,
+    .append = pair_append,
+    .filter = pair_filter,
+    .reverse = pair_reverse,
+    .min = pair_min,
+    .sort = pair_sort,
+};
+
+ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
+ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
+int string_compare(ltbs_cell *string1, ltbs_cell *string2);
+ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context);
+ltbs_cell *string_to_list(ltbs_cell *string, Arena *context);
+ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
+ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
+void string_print(ltbs_cell *string);
+ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
+ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
+
+ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
+ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
+ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
+ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
+ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context);
+ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
+ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
+
+ltbs_cell *hash_make(Arena *context);
+ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
+int hash_compute(ltbs_string *key);
+ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
+ltbs_cell *hash_keys(ltbs_cell **map, Arena *context);
+
+ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
+ltbs_cell *format_serialize(char *format, ltbs_cell *data_map, Arena *context);
+
+#include <stdlib.h>
+#include <stdio.h>
 
 static const ltbs_cell PAIR_NIL = (ltbs_cell)
 {
     .type = LTBS_PAIR,
     .data = { .pair = { .head = 0, .rest = 0 } }
 };
-
-extern ltbs_cell *ltbs_alloc(Arena *context);
-extern ltbs_cell *int_from_int(int num, Arena *context);
-extern ltbs_cell *pair_head(ltbs_cell *pair);
-extern ltbs_cell *pair_rest(ltbs_cell *pair);
-extern ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
-extern unsigned int pair_is_atom(ltbs_cell *value);
-extern unsigned int pair_count(ltbs_cell *list);
-extern ltbs_cell *pair_by_index(ltbs_cell *list, unsigned int index);
-extern ltbs_cell *pair_reverse(ltbs_cell *list, Arena *context);
-extern ltbs_cell *pair_append(ltbs_cell *list1, ltbs_cell *list2, Arena *context);
-extern unsigned int pair_length(ltbs_cell *list);
-extern ltbs_cell *pair_take(ltbs_cell *list, unsigned int to_take, Arena* context);
-extern ltbs_cell *pair_min(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
-extern ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Arena *context);
-extern ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
-extern ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
-extern ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
-
-#define pair_iterate(to_iter, head, tracker, ...) { for ( ltbs_cell *tracker = to_iter; pair_head(tracker); tracker = pair_rest(tracker) ) { ltbs_cell *head = pair_head(tracker); __VA_ARGS__ } } 
-
-extern ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
-extern ltbs_cell *string_substring(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
-extern int string_compare(ltbs_cell *string1, ltbs_cell *string2);
-extern ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context);
-extern ltbs_cell *string_to_list(ltbs_cell *string, Arena *context);
-extern ltbs_cell *string_reverse(ltbs_cell *string, Arena *context);
-extern ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
-extern void string_print(ltbs_cell *string);
-extern ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
-extern ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
-extern ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
-extern ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
-extern ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
-extern ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
-extern ltbs_cell *array_slice(ltbs_cell *array, unsigned int start, unsigned int length, Arena *context);
-extern ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
-extern ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
-
-extern ltbs_cell *hash_make(Arena *context);
-extern ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
-extern int hash_compute(ltbs_string *key);
-extern ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
-extern ltbs_cell *hash_keys(ltbs_cell **map, Arena *context);
-
-#define hashmap_from_kvps(hashmap, context, ...) {                          \
-    hashmap = hash_make(context);	                                    \
-    ltbs_keyvaluepair *kvp_list =                                           \
-	(ltbs_keyvaluepair[]) { __VA_ARGS__, {0,0} };			    \
-    for (int index = 0; kvp_list[index].key != 0; index++ )                 \
-    {                                                                       \
-        ltbs_cell *key = string_from_cstring(kvp_list[index].key, context); \
-        hash_upsert(                                                        \
-	    &hashmap,                                                       \
-            key,                                                            \
-	    kvp_list[index].value,                                          \
-	    context                                                         \
-       );                                                                   \
-    }						                            \
-}					                                    \
-    
-extern ltbs_cell *format_string(char *format, ltbs_cell *data_list, Arena *context);
-extern ltbs_cell *format_serialize(char *format, ltbs_cell *data_map, Arena *context);
-
-#ifdef LIBBLACKSQUID_IMPLEMENTATION
-#define ARENA_IMPLEMENTATION
-
-#include <stdlib.h>
-#include <stdio.h>
 
 ltbs_cell *ltbs_alloc(Arena *context)
 {
@@ -660,6 +711,8 @@ ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
 
     for ( int index = 0; index < length; index++ )
 	buffer[index] = cstring[index];
+
+    buffer[length] = 0;
     
     return result;
 }
@@ -1107,12 +1160,12 @@ typedef struct _ltbs_reader _ltbs_reader;
 struct _ltbs_reader
 {
     char* input;
-    int current_pos;
+    long int current_pos;
     ltbs_cell *output;
     ltbs_cell *data;
     Arena *workspace;
-    int cursor;
-    int input_length;
+    long int cursor;
+    long int input_length;
 };
 
 void append_to_format_buffer(_ltbs_reader *state);
@@ -1123,7 +1176,8 @@ ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *context)
 {
     int initial_length = (8*1024);
     Arena *workspace = malloc(sizeof(Arena));
-    *workspace = (Arena) {0};
+    Region *big_region = new_region(REGION_DEFAULT_CAPACITY * 5);
+    *workspace = (Arena) {big_region, big_region};
     ltbs_cell *result;
     ltbs_cell *output = ltbs_alloc(workspace);
     int len = string_from_cstring(format, workspace)->data.string.length;
@@ -1226,10 +1280,10 @@ void append_to_format_buffer(_ltbs_reader *state)
 void append_string(_ltbs_reader *state, ltbs_cell *string)
 {
     byte *output = &state->output->data.string.strdata[state->cursor];
-    int capacity = state->output->data.string.length;
-    int length = string->data.string.length;
-    int avail = capacity - length;
-    int amount = avail < length ? avail : length;
+    long int capacity = state->output->data.string.length;
+    long int length = string->data.string.length;
+    long int avail = capacity - length;
+    long int amount = avail < length ? avail : length;
 
     for (int index = 0; index < amount; index++)
     {
@@ -1418,4 +1472,4 @@ void append_cell(_ltbs_reader *state, ltbs_cell *cell)
 }
 
 #endif // LIBBLACKSQUID_IMPLEMENTATION
-#endif // LIBBLACKSQUID_H
+
