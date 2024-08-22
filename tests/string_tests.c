@@ -10,31 +10,31 @@ int main()
 {
     Arena context = {0};
 
-    ltbs_cell *string1 = string_from_cstring("Hello world!", &context);
-    ltbs_cell *string2 = string_from_cstring("Ohayou Minna!\n", &context);
+    ltbs_cell *string1 = String_Vt.cs("Hello world!", &context);
+    ltbs_cell *string2 = String_Vt.cs("Ohayou Minna!\n", &context);
 
-    ltbs_cell *appended = string_append(string1, string2, &context);
+    ltbs_cell *appended = String_Vt.append(string1, string2, &context);
 
-    string_print(string1); putc('\n', stdout);
-    string_print(string2); putc('\n', stdout);
-    string_print(appended);
+    String_Vt.print(string1); putc('\n', stdout);
+    String_Vt.print(string2); putc('\n', stdout);
+    String_Vt.print(appended);
 
     int comparison = string_compare(string1, string2);
 
     printf("comparing string1 and string2: %d\n", comparison);
 
-    printf("comparing same string content: %d\n", string_compare(string1, string_from_cstring("Hello world!", &context)));
+    printf("comparing same string content: %d\n", String_Vt.compare(string1, String_Vt.cs("Hello world!", &context)));
 
-    string_print(string_substring(appended, 6, 18, &context));
+    String_Vt.print(String_Vt.substring(appended, 6, 18, &context));
 
-    ltbs_cell *reversed = string_reverse(appended, &context);
+    ltbs_cell *reversed = String_Vt.reverse(appended, &context);
 
-    string_print(reversed);
+    String_Vt.print(reversed);
 
-    ltbs_cell *split = string_split(string_from_cstring("this is an example", &context), ' ', &context);
-    ltbs_cell *split2 = string_split_multi(
-	string_from_cstring("this \n\t\tis\nan\t example", &context),
-	string_from_cstring("\t\n\r ", &context),
+    ltbs_cell *split = String_Vt.split(String_Vt.cs("this is an example", &context), ' ', &context);
+    ltbs_cell *split2 = String_Vt.split_multi(
+	String_Vt.cs("this \n\t\tis\nan\t example", &context),
+	String_Vt.cs("\t\n\r ", &context),
 	&context
     );
 
@@ -42,7 +42,7 @@ int main()
     pair_iterate(split, head, tracker,
     {
 	printf("\"");
-	string_print(head);
+	String_Vt.print(head);
 	printf("\"");
 	printf(", ");
     });
@@ -52,7 +52,7 @@ int main()
     pair_iterate(split2, head, tracker,
     {
 	printf("\"");
-	string_print(head);
+	String_Vt.print(head);
 	printf("\"");
 	printf(", ");
     });

@@ -364,8 +364,19 @@ extern struct ltbs_list_vt List_Vt;
 
 struct ltbs_string_vt
 {
-    
+    ltbs_cell *(*cs)(const char *cstring, Arena *context);
+    ltbs_cell *(*substring)(ltbs_cell *string, unsigned int start, unsigned int end, Arena *context);
+    int (*compare)(ltbs_cell *string1, ltbs_cell *string2);
+    ltbs_cell *(*append)(ltbs_cell *string1, ltbs_cell *string2, Arena *context);
+    ltbs_cell *(*to_list)(ltbs_cell *string, Arena *context);
+    ltbs_cell *(*reverse)(ltbs_cell *string, Arena *context);
+    ltbs_cell *(*copy)(ltbs_cell *string, Arena *destination);
+    void (*print)(ltbs_cell *string);
+    ltbs_cell *(*split)(ltbs_cell *string, byte splitter, Arena *context);
+    ltbs_cell *(*split_multi)(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
 };
+
+extern struct ltbs_string_vt String_Vt;
 
 struct ltbs_array_vt
 {
@@ -425,6 +436,20 @@ ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
 void string_print(ltbs_cell *string);
 ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
 ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
+
+struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
+{
+    .cs = string_from_cstring,
+    .substring = string_substring,
+    .compare = string_compare,
+    .append = string_append,
+    .to_list = string_to_list,
+    .reverse = string_reverse,
+    .copy = string_copy,
+    .print = string_print,
+    .split = string_split,
+    .split_multi = string_split_multi
+};
 
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
 ltbs_cell *array_ref(ltbs_cell *array, unsigned int index);
