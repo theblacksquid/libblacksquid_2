@@ -358,6 +358,7 @@ struct ltbs_list_vt
     ltbs_cell *(*min)(ltbs_cell *list, compare_fn compare);
     ltbs_cell *(*sort)(ltbs_cell *list, compare_fn compare, Arena *context);
     ltbs_cell *(*filter)(ltbs_cell *list, pred_fn pred, Arena *context);
+    ltbs_cell *(*nil)();
 };
 
 extern struct ltbs_list_vt List_Vt;
@@ -417,6 +418,7 @@ ltbs_cell *pair_sort(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*), Ar
 ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
+ltbs_cell *pair_nil();
 
 struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
 {
@@ -430,6 +432,7 @@ struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
     .reverse = pair_reverse,
     .min = pair_min,
     .sort = pair_sort,
+    .nil = pair_nil
 };
 
 ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
@@ -491,6 +494,11 @@ static const ltbs_cell PAIR_NIL = (ltbs_cell)
     .type = LTBS_PAIR,
     .data = { .pair = { .head = 0, .rest = 0 } }
 };
+
+ltbs_cell *pair_nil()
+{
+    return &PAIR_NIL;
+}
 
 ltbs_cell *ltbs_alloc(Arena *context)
 {
