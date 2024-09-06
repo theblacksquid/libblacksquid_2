@@ -10,7 +10,9 @@
     "-Wno-unused-parameter"
     "-Wno-unused-function"
     "-Wno-sign-conversion"
-    "-fsanitize=undefined,address"))
+    "-fsanitize=undefined,address"
+    "-lxml2"
+    "-I/usr/include/libxml2"))
 
 (define compile-flags-valgrind
   '("-g3"
@@ -21,14 +23,17 @@
     "-Wno-unused-parameter"
     "-Wno-unused-function"
     "-Wno-sign-conversion"
-    "-fsanitize=undefined"))
+    "-fsanitize=undefined"
+    "-lxml2"
+    "-I/usr/include/libxml2"))
 
 (define source-files
   '((format . "tests/format_tests.c")
     (string . "tests/string_tests.c")
     (hashmap . "tests/hashmap_tests.c")
     (lists . "tests/pair_tests.c")
-    (custom . "tests/custom_tests.c")))
+    (custom . "tests/custom_tests.c")
+    (xml . "tests/lxml2_tests.c")))
 
 (define cwd (string-append (getcwd) "/"))
 
