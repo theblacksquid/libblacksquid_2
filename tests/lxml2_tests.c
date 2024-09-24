@@ -427,5 +427,25 @@ int main()
 	});
     }
 
+    {
+	printf("\n\n");
+
+	char base_xml[] = "<article><p id='test1'></p><p id='test2'></p></article>";
+	htmlDocPtr doc = Libxml2_vt.cstring_to_xml(base_xml);
+	printf("%s\n\n\n", base_xml);
+
+	xmlNodePtr article_node = Libxml2_vt.xpath(doc, "//article")->nodesetval->nodeTab[0];
+	xmlNodePtr p1 = Libxml2_vt.xpath(doc, "//*[@id='test1']")->nodesetval->nodeTab[0];
+	xmlNodePtr p2 = Libxml2_vt.xpath(doc, "//*[@id='test2']")->nodesetval->nodeTab[0];
+
+	Libxml2_vt.node_set_prop(article_node, "data-testid", "testvalue");
+	Libxml2_vt.node_set_text(p1, "This is some text");
+	Libxml2_vt.node_set_prop(p2, "class", "card");
+	Libxml2_vt.node_set_text(p2, "Another paragraph");
+
+	char *output = Libxml2_vt.node_to_string(article_node);
+	printf("%s\n", output);
+    }
+
     arena_free(&context);
 }

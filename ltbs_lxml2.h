@@ -3,6 +3,7 @@
 #ifndef LTBS_LXML2_H
 #define LTBS_LXML2_H
 
+#include "libxml/parser.h"
 #include <libxml/tree.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/xpath.h>
@@ -22,6 +23,9 @@ struct ltbs_xml_vt
     xmlXPathObjectPtr (*node_map)(xmlXPathObjectPtr nodes, node_map_fn callback, void *data);
     char *(*node_get_text)(xmlNodePtr node);
     char *(*node_get_prop)(xmlNodePtr node, char *propname);
+    xmlAttrPtr (*node_set_prop)(xmlNodePtr node, char *propname, char *value);
+    void (*node_set_text)(xmlNodePtr node, char *content);
+    char *(*node_to_string)(xmlNodePtr node);
 };
 
 extern struct ltbs_xml_vt Libxml2_vt;
@@ -38,6 +42,9 @@ void node_each(xmlXPathObjectPtr nodes, node_each_fn callback, void *data);
 xmlXPathObjectPtr node_map(xmlXPathObjectPtr nodes, node_map_fn callback, void *data);
 char *node_get_text(xmlNodePtr node);
 char *node_get_prop(xmlNodePtr node, char *propname);
+xmlAttrPtr node_set_prop(xmlNodePtr node, char *propname, char *value);
+void node_set_text(xmlNodePtr node, char *content);
+char *node_to_string(xmlNodePtr node);
 
 ltbs_xml_vt Libxml2_vt = (ltbs_xml_vt)
 {
@@ -47,7 +54,10 @@ ltbs_xml_vt Libxml2_vt = (ltbs_xml_vt)
     .node_each = node_each,
     .node_map = node_map,
     .node_get_text = node_get_text,
-    .node_get_prop = node_get_prop
+    .node_get_prop = node_get_prop,
+    .node_set_prop = node_set_prop,
+    .node_set_text = node_set_text,
+    .node_to_string = node_to_string,
 };
 
 htmlDocPtr from_file(char *filepath)
@@ -158,5 +168,20 @@ xmlXPathObjectPtr node_map(xmlXPathObjectPtr nodes, node_map_fn callback, void *
 char *node_get_text(xmlNodePtr node) { return (char *) xmlNodeGetContent(node); }
 
 char *node_get_prop(xmlNodePtr node, char *propname) { return (char *) xmlGetProp(node, propname); }
+
+xmlAttrPtr node_set_prop(xmlNodePtr node, char *propname, char *value) { return xmlSetProp(node, propname, value); }
+
+void node_set_text(xmlNodePtr node, char *content){ return xmlNodeSetContent(node, content);}
+
+char *node_to_string(xmlNodePtr node)
+{
+    xmlKeepBlanksDefault(0);
+    
+    xmlBufferPtr output = xmlBufferCreate();
+    int response = xmlNodeDump(output, node->doc, node, 1, 1);
+
+    if ( response ) return output->content;
+    else return NULL;
+}
 
 #endif // LTBS_LIBXML2_IMPLEMENTATION
