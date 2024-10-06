@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#define ARENA_IMPLEMENTATION
 #define LIBBLACKSQUID_IMPLEMENTATION
 #include "../libblacksquid.h"
 
