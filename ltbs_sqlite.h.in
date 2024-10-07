@@ -1,0 +1,248 @@
+
+
+
+
+
+#ifndef LTBS_SQLITE_H
+#define LTBS_SQLITE_H
+
+#include <sqlite3.h>
+
+typedef struct sqlite_vt sqlite_vt;
+typedef void (*ltbs_sqlite_fn)(sqlite3 *db, int *status);
+typedef sqlite3 *(*ltbs_sqlite_connect)(const char *path, int *status);
+typedef void (*ltbs_sqlite_with_db)(const char *path, ltbs_sqlite_fn callback, int *status);
+typedef void (*with_db_execsql)(sqlite3 *db, const char *sql, int *status, ...);
+typedef ltbs_cell *(*with_db_query)(sqlite3 *db, const char *sql, Arena *context, int *status, ...);
+typedef void (*ltbs_sqlite_close)(sqlite3 *db, int *status);
+
+struct sqlite_vt
+{
+    ltbs_sqlite_connect connect;
+    ltbs_sqlite_with_db with_db;
+    with_db_execsql with_db_execsql;
+    with_db_query with_db_query;
+    ltbs_sqlite_close close;
+};
+
+extern sqlite_vt Ltbs_Sqlite3_vt;
+
+#endif // LTBS_SQLITE_H
+
+#define LTBS_SQLITE_IMPLEMENTATION
+#ifdef LTBS_SQLITE_IMPLEMENTATION
+
+#include <stdarg.h>
+#include <stdio.h>
+
+sqlite3 *connect(const char *path, int *status);
+void with_db(const char *path, ltbs_sqlite_fn callback, int *status);
+void withdb_execsql(sqlite3 *db, const char *path, int *status, ...);
+ltbs_cell *withdb_query(sqlite3 *db, const char *path, Arena *context, int *status, ...);
+void sqlite_close(sqlite3 *db, int *status);
+void ltbs_sqlite_bind_param(sqlite3_stmt *statement, int index, ltbs_cell *param);
+ltbs_cell *ltbs_sqlite_value(sqlite3_stmt *statement, int index, Arena *context);
+
+sqlite_vt Ltbs_Sqlite3_vt = (struct sqlite_vt)
+{
+    .connect = connect,
+    .with_db = with_db,
+    .with_db_execsql = withdb_execsql,
+    .with_db_query = withdb_query,
+    .close = sqlite_close,
+};
+
+sqlite3 *connect(const char *path, int *status)
+{
+    sqlite3 *result = NULL;
+    *status = sqlite3_open(path, &result);
+
+    return result;
+}
+
+void with_db(const char *path, ltbs_sqlite_fn callback, int *status)
+{
+    int return_code;
+    sqlite3 *db;
+    return_code = sqlite3_open(path, &db);
+
+    if ( return_code != SQLITE_OK )
+    {
+	*status = return_code;
+	return;
+    }
+
+    callback(db, &return_code);
+
+    *status = return_code;
+    sqlite3_close(db);
+    return;
+}
+
+void withdb_execsql(sqlite3 *db, const char *path, int *status, ...)
+{
+    int return_code;
+    sqlite3_stmt *statement;
+    va_list arguments;
+    int number_of_arguments;
+
+    return_code = sqlite3_prepare_v2(db, path, -1, &statement, NULL);
+
+    if ( return_code != SQLITE_OK )
+    {
+	*status = return_code;
+	return;
+    }
+
+    va_start(arguments, status);
+    number_of_arguments = sqlite3_bind_parameter_count(statement);
+
+    for ( int index = 0; index < number_of_arguments; index++ )
+    {
+	ltbs_cell *param = va_arg(arguments, ltbs_cell*);
+	ltbs_sqlite_bind_param(statement, index + 1, param);
+    }
+
+    return_code = sqlite3_step(statement);
+
+    if ( return_code != SQLITE_OK || return_code != SQLITE_ROW )
+    {
+	sqlite3_finalize(statement);
+	return;
+    }
+    
+    sqlite3_finalize(statement);
+}
+
+ltbs_cell *withdb_query(sqlite3 *db, const char *path, Arena *context, int *status, ...)
+{
+    ltbs_cell *result = List_Vt.nil();
+    int return_code;
+    sqlite3_stmt *statement;
+    va_list arguments;
+    int number_of_arguments;
+
+    return_code = sqlite3_prepare_v2(db, path, -1, &statement, NULL);
+
+    if ( return_code != SQLITE_OK )
+    {
+	*status = return_code;
+	return NULL;
+    }
+
+    va_start(arguments, status);
+    number_of_arguments = sqlite3_bind_parameter_count(statement);
+
+    for ( int index = 0; index < number_of_arguments; index++ )
+    {
+	ltbs_cell *param = va_arg(arguments, ltbs_cell*);
+	ltbs_sqlite_bind_param(statement, index + 1, param);
+    }
+
+    return_code = sqlite3_step(statement);
+
+    if ( return_code != SQLITE_OK || return_code != SQLITE_ROW )
+    {
+	sqlite3_finalize(statement);
+	return NULL;
+    }
+
+    while ( sqlite3_step(statement) == SQLITE_ROW )
+    {
+	int number_of_columns = sqlite3_column_count(statement);
+	ltbs_cell *to_add = Hash_Vt.new(context);
+
+	for ( int col_index = 0; col_index < number_of_columns; col_index++ )
+	{
+	    char *colname_raw = sqlite3_column_name(statement, col_index);
+	    ltbs_cell *key = String_Vt.cs(colname_raw, context);
+	    ltbs_cell *value = ltbs_sqlite_value(statement, col_index, context);
+
+	    Hash_Vt.upsert(&to_add, key, value, context);
+	}
+
+	result = List_Vt.cons(to_add, result, context);
+    }
+
+    sqlite3_finalize(statement);
+
+    return result;
+}
+
+void sqlite_close(sqlite3 *db, int *status)
+{
+    *status = sqlite3_close(db);
+}
+
+void ltbs_sqlite_bind_param(sqlite3_stmt *statement, int index, ltbs_cell *param)
+{
+    switch ( param->type )
+    {
+        case LTBS_INT: sqlite3_bind_int(statement, index, param->data.integer);
+	break;
+
+        case LTBS_FLOAT: sqlite3_bind_double(statement, index, (double) param->data.floatval);
+	break;
+
+        case LTBS_STRING: sqlite3_bind_text(statement, index, param->data.string.strdata, param->data.string.length, NULL);
+	break;
+
+        case LTBS_BYTE: sqlite3_bind_int(statement, index, param->data.byteval);
+	break;
+    
+        default: fprintf(stderr, "Attempted binding a non-value to a sqlite statement...\n");
+    }
+}
+
+ltbs_cell *ltbs_sqlite_value(sqlite3_stmt *statement, int index, Arena *context)
+{
+    ltbs_cell *result;
+
+    switch ( sqlite3_column_type(statement, index) )
+    {
+        case SQLITE_INTEGER:
+	{
+	    int value = sqlite3_column_int(statement, index);
+	    result = List_Vt.from_int(value, context);
+	}
+	break;
+
+        case SQLITE_FLOAT:
+	{
+	    float value = (float) sqlite3_column_double(statement, index);
+	    result = List_Vt.from_float(value, context);
+	    
+	}
+	break;
+
+        case SQLITE_TEXT:
+	{
+	    const char *value = sqlite3_column_text(statement, index);
+	    result = String_Vt.cs(value, context);
+	}
+	break;
+
+        case SQLITE_BLOB:
+	{
+	    int size = sqlite3_column_bytes(statement, index) + 1;
+	    char *blobval = sqlite3_column_blob(statement, index);
+	    result = arena_alloc(context, sizeof(ltbs_cell));
+	    result->type = LTBS_CUSTOM;
+	    result->data.custom.size = size;
+	    result->data.custom.data = arena_alloc(context, size);
+
+	    for ( int index = 0; index < size; index++ )
+	    {
+		((char *) result->data.custom.data)[index] = blobval[index];
+	    }
+	    
+	}
+	break;
+
+        case SQLITE_NULL: result = List_Vt.nil(); break;
+    }
+
+    return result;
+}
+
+#endif // LTBS_SQLITE_IMPLEMENTATION

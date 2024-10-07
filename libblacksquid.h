@@ -9,7 +9,6 @@
 // in *ONE* source file, before #including this file.
 
 
-
 // Arena Allocator
 
 // from https://github.com/tsoding/arena
@@ -194,6 +193,8 @@ struct ltbs_list_vt
     ltbs_cell *(*sort)(ltbs_cell *list, compare_fn compare, Arena *context);
     ltbs_cell *(*filter)(ltbs_cell *list, pred_fn pred, Arena *context);
     ltbs_cell *(*nil)();
+    ltbs_cell *(*from_int)(int value, Arena *context);
+    ltbs_cell *(*from_float)(float value, Arena *context);
 };
 
 extern struct ltbs_list_vt List_Vt;
@@ -238,6 +239,7 @@ extern struct ltbs_hashmap_vt Hash_Vt;
 
 ltbs_cell *ltbs_alloc(Arena *context);
 ltbs_cell *int_from_int(int num, Arena *context);
+ltbs_cell *from_float(float value, Arena *context);
 ltbs_cell *pair_head(ltbs_cell *pair);
 ltbs_cell *pair_rest(ltbs_cell *pair);
 ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
@@ -267,7 +269,9 @@ struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
     .reverse = pair_reverse,
     .min = pair_min,
     .sort = pair_sort,
-    .nil = pair_nil
+    .nil = pair_nil,
+    .from_int = int_from_int,
+    .from_float = from_float,
 };
 
 ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
@@ -347,6 +351,15 @@ ltbs_cell *int_from_int(int num, Arena *context)
     ltbs_cell *result = ltbs_alloc(context);
     result->type = LTBS_INT;
     result->data.integer = num;
+
+    return result;
+}
+
+ltbs_cell *from_float(float num, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    result->type = LTBS_FLOAT;
+    result->data.floatval = num;
 
     return result;
 }
