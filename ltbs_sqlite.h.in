@@ -139,15 +139,9 @@ ltbs_cell *withdb_query(sqlite3 *db, const char *path, Arena *context, int *stat
 	ltbs_sqlite_bind_param(statement, index + 1, param);
     }
 
-    return_code = sqlite3_step(statement);
+    va_end(arguments);
 
-    if ( return_code != SQLITE_OK || return_code != SQLITE_ROW )
-    {
-	sqlite3_finalize(statement);
-	return NULL;
-    }
-
-    while ( sqlite3_step(statement) == SQLITE_ROW )
+    while ( sqlite3_step(statement) != SQLITE_DONE )
     {
 	int number_of_columns = sqlite3_column_count(statement);
 	ltbs_cell *to_add = Hash_Vt.new(context);
