@@ -64,10 +64,11 @@ ltbs_sqlite.h: ltbs_sqlite.h.in libblacksquid.h
 	cat libblacksquid.h ltbs_sqlite.h.in > ltbs_sqlite.h
 
 clean:
-	rm *.o
-	rm ./pair;
-	rm ./hashmap;
-	rm ./string;
-	rm ./xml_vg;
-	rm ./xml_asan;
-	rm ./sqlite_tests_vg;
+	-rm *.o
+	-rm ./pair;
+	-rm ./hashmap;
+	-rm ./string;
+	-rm ./xml_vg;
+	-rm ./xml_asan;
+	-rm ./sqlite_tests_vg;
+	-rm ./ltbs_sqlite.h;
