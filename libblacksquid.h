@@ -100,6 +100,8 @@ typedef struct ltbs_keyvaluepair ltbs_keyvaluepair;
 typedef int (*compare_fn)(ltbs_cell*, ltbs_cell*);
 typedef int (*pred_fn)(ltbs_cell*);
 typedef char byte;
+typedef ltbs_cell *(*transform_fn)(ltbs_cell *cell, Arena *context);
+typedef void (*callback_fn)(ltbs_cell *cell);
 
 #define HASH_FACTOR 1111111111111111111u
 
@@ -195,6 +197,8 @@ struct ltbs_list_vt
     ltbs_cell *(*nil)();
     ltbs_cell *(*from_int)(int value, Arena *context);
     ltbs_cell *(*from_float)(float value, Arena *context);
+    ltbs_cell *(*map)(ltbs_cell *list, transform_fn transform, Arena *context);
+    void (*for_each)(ltbs_cell *list, callback_fn callback);
 };
 
 extern struct ltbs_list_vt List_Vt;
@@ -233,7 +237,7 @@ extern struct ltbs_hashmap_vt Hash_Vt;
 
 #endif // LIBBLACKSQUID_H
 
-/* #define LIBBLACKSQUID_IMPLEMENTATION */
+#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -256,6 +260,8 @@ ltbs_cell *pair_copy(ltbs_cell *list, Arena *destination);
 ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_cell*));
 ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 ltbs_cell *pair_nil();
+ltbs_cell *pair_map(ltbs_cell *list, transform_fn transform, Arena *context);
+void pair_foreach(ltbs_cell *list, callback_fn callback);
 
 struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
 {
@@ -272,6 +278,8 @@ struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
     .nil = pair_nil,
     .from_int = int_from_int,
     .from_float = from_float,
+    .map = pair_map,
+    .for_each = pair_foreach,
 };
 
 ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
@@ -590,6 +598,26 @@ ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context)
     });
 
     return result;
+}
+
+ltbs_cell *pair_map(ltbs_cell *list, transform_fn transform, Arena *context)
+{
+    ltbs_cell *result = pair_nil();
+
+    pair_iterate(list, head, tracker,
+    {
+	result = pair_cons(transform(head, context), result, context);
+    });
+
+    return result;
+}
+
+void pair_foreach(ltbs_cell *list, callback_fn callback)
+{
+    pair_iterate(list, head, tracker,
+    {
+	callback(head);
+    });
 }
 
 ltbs_cell *string_from_cstring(const char *cstring, Arena *context)

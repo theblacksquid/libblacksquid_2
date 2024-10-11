@@ -24,6 +24,16 @@ int is_even(ltbs_cell *val)
     return (val->data.integer % 2) == 0;
 }
 
+ltbs_cell *multiply_by_two(ltbs_cell *cell, Arena *context)
+{
+    return List_Vt.from_int(cell->data.integer * 2, context);
+}
+
+void print_int(ltbs_cell *cell)
+{
+    printf("%d\n", cell->data.integer);
+}
+
 int main()
 {
     Arena context = {0};
@@ -123,6 +133,10 @@ int main()
 
 	    printf("\n\n");	    
 	}
+
+	ltbs_cell *times_two = List_Vt.map(even_ints, multiply_by_two, &context);
+
+	List_Vt.for_each(times_two, print_int);
     }
 
     arena_free(&context);

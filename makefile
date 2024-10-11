@@ -16,7 +16,7 @@ DEPS=\
 $(shell pkg-config --cflags --libs libxml-2.0) \
 $(shell pkg-config --cflags --libs sqlite3)
 
-all: pair hashmap string xml_vg xml_asan
+all: pair hashmap string xml_vg xml_asan sqlite_tests_vg
 
 pair: tests/pair_tests.c
 	gcc $(WITH_ASAN) tests/pair_tests.c -o pair;
