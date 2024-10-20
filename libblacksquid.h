@@ -88,6 +88,7 @@ void arena_free(Arena *a);
 
 #ifndef LIBBLACKSQUID_H
 #define LIBBLACKSQUID_H
+#pragma once
 
 typedef enum ltbs_type ltbs_type;
 typedef struct ltbs_cell ltbs_cell;
@@ -215,6 +216,7 @@ struct ltbs_string_vt
     void (*print)(ltbs_cell *string);
     ltbs_cell *(*split)(ltbs_cell *string, byte splitter, Arena *context);
     ltbs_cell *(*split_multi)(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
+    ltbs_cell *(*format)(size_t *buffsize, Arena *context, const char *fmt, ...);
 };
 
 extern struct ltbs_string_vt String_Vt;
@@ -237,7 +239,7 @@ extern struct ltbs_hashmap_vt Hash_Vt;
 
 #endif // LIBBLACKSQUID_H
 
-#define LIBBLACKSQUID_IMPLEMENTATION
+/* #define LIBBLACKSQUID_IMPLEMENTATION */
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -292,6 +294,7 @@ ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
 void string_print(ltbs_cell *string);
 ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
 ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
+ltbs_cell *string_format(size_t buffsize, Arena *context, const char *fmt, ...);
 
 struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
 {
@@ -304,7 +307,8 @@ struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
     .copy = string_copy,
     .print = string_print,
     .split = string_split,
-    .split_multi = string_split_multi
+    .split_multi = string_split_multi,
+    .format = string_format,
 };
 
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
@@ -335,6 +339,7 @@ ltbs_cell *format_serialize(char *format, ltbs_cell *data_map, Arena *context);
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 static const ltbs_cell PAIR_NIL = (ltbs_cell)
 {
@@ -863,6 +868,28 @@ ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *con
     return result;
 }
 
+ltbs_cell *string_format(size_t buffsize, Arena *context, const char *fmt, ...)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    char *buffer = arena_alloc(context, buffsize);
+    va_list arguments;
+    
+    result->type = LTBS_STRING;
+    result->data.string.strdata = buffer;
+    result->data.string.length  = buffsize;
+
+    for (size_t index = 0; index < buffsize; index++)
+	buffer[index] = 0;
+
+    FILE *as_file = fmemopen(buffer, buffsize, "r+");
+    va_start(arguments, fmt);
+    vfprintf(as_file, fmt, arguments);
+    va_end(arguments);
+    fclose(as_file);
+
+    return result;
+}
+
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
@@ -1077,322 +1104,6 @@ ltbs_cell *hash_keys(ltbs_cell **map, Arena *context)
     ltbs_cell *result = ltbs_alloc(context); *result = PAIR_NIL;
     __hash_keys_impl(map, &result, context);
     return result;
-}
-
-typedef struct _ltbs_reader _ltbs_reader;
-
-struct _ltbs_reader
-{
-    char* input;
-    long int current_pos;
-    ltbs_cell *output;
-    ltbs_cell *data;
-    Arena *workspace;
-    long int cursor;
-    long int input_length;
-};
-
-void append_to_format_buffer(_ltbs_reader *state);
-byte reader_peek(_ltbs_reader *state);
-void reader_advance(_ltbs_reader *state);
-
-ltbs_cell *format_string(char *format, ltbs_cell *data_map, Arena *context)
-{
-    int initial_length = (8*1024);
-    Arena *workspace = malloc(sizeof(Arena));
-    Region *big_region = new_region(REGION_DEFAULT_CAPACITY * 5);
-    *workspace = (Arena) {big_region, big_region};
-    ltbs_cell *result;
-    ltbs_cell *output = ltbs_alloc(workspace);
-    int len = string_from_cstring(format, workspace)->data.string.length;
-    _ltbs_reader state = (_ltbs_reader) { format, 0, output, data_map, workspace, 0, len }; 
-
-    output->type = LTBS_STRING;
-    output->data.string.length = initial_length;
-    output->data.string.strdata = arena_alloc(workspace, initial_length);
-    append_to_format_buffer(&state);
-    
-    result = string_copy(output, context);
-    result->data.string.length = state.cursor;
-
-    arena_free(workspace);
-    free(workspace);
-    return result;
-}
-
-void skip_until_format_start(_ltbs_reader *state)
-{
-    byte previous = 0;
-    byte current = reader_peek(state);
-
-    while (current != '\0')
-    {
-        if (current == '{' && previous == '{')
-	{
-	    // erase the curly brace that got copied into buffer
-	    state->cursor--;
-	    reader_advance(state);
-	    break;
-	}
-
-	previous = reader_peek(state);
-	state->output->data.string.strdata[state->cursor] = current;
-	state->cursor++;
-	reader_advance(state);
-	current = reader_peek(state);
-    }
-}
-
-void skip_until_format_end(_ltbs_reader *state)
-{
-    byte previous = 0;
-    byte current = reader_peek(state);
-
-    while (current != '\0')
-    {
-        if (current == '}' && previous == '}') 
-	{
-	    state->current_pos--;
-	    return;
-	}
-
-	previous = current;
-	reader_advance(state);
-	current = reader_peek(state);
-    }    
-}
-
-byte reader_peek(_ltbs_reader *state) { return state->input[state->current_pos]; }
-void reader_advance(_ltbs_reader *state) { state->current_pos++; }
-
-void append_byte(_ltbs_reader *state, ltbs_cell *b);
-void append_int(_ltbs_reader *state, ltbs_cell *num);
-void append_float(_ltbs_reader *state, ltbs_cell *num);
-void append_list(_ltbs_reader *state, ltbs_cell *list);
-void append_string(_ltbs_reader *state, ltbs_cell *string);
-void append_array(_ltbs_reader *state, ltbs_cell *array);
-void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap);
-void append_cell(_ltbs_reader *state, ltbs_cell *cell);
-void append_pointer(_ltbs_reader *state, ltbs_cell *cell);
-
-void append_to_format_buffer(_ltbs_reader *state)
-{
-    while ( (state->input_length > state->current_pos) && reader_peek(state) != '\0' )
-    {
-	int length;
-	int start;
-	ltbs_cell key;
-	ltbs_cell *value;
-
-	skip_until_format_start(state);
-	start = state->current_pos;
-	skip_until_format_end(state);
-	length = state->current_pos - start;
-	state->current_pos += 2;
-
-	key = (ltbs_cell) {
-	    .type = LTBS_STRING,
-	    .data = { .string = { .length = length, .strdata = &state->input[start] } }
-	};
-
-	value = hash_upsert(&state->data, &key, 0, 0);
-
-	if ( value != 0 ) append_cell(state, value);
-    }
-}
-
-void append_string(_ltbs_reader *state, ltbs_cell *string)
-{
-    byte *output = &state->output->data.string.strdata[state->cursor];
-    long int capacity = state->output->data.string.length;
-    long int length = string->data.string.length;
-    long int avail = capacity - length;
-    long int amount = avail < length ? avail : length;
-
-    for (int index = 0; index < amount; index++)
-    {
-	output[index] = string->data.string.strdata[index];
-	state->cursor++;
-    }
-}
-
-void append_byte(_ltbs_reader *state, ltbs_cell *b)
-{
-    state->output->data.string.strdata[state->cursor] = b->data.byteval;
-    state->cursor++;
-}
-
-void append_byte_(_ltbs_reader *state, byte c)
-{
-    state->output->data.string.strdata[state->cursor] = c;
-    state->cursor++;
-}
-
-void append_int(_ltbs_reader *state, ltbs_cell *num)
-{
-    if ( num->data.integer == 0 ) return append_byte_(state, '0');
-	
-    int to_print = num->data.integer;
-    byte buffer[33] = {0}; // 32 places for the number, last for the NUL terminator
-    byte *end = buffer + sizeof(buffer);
-    byte *beginning = end;
-    ltbs_cell *to_append;
-
-    --beginning;
-
-    for ( int current = to_print > 0 ? -to_print : to_print;
-	  current;
-	  current /= 10 )
-	*--beginning = '0' - current % 10;
-
-    if ( to_print < 0 )
-	*--beginning = '-';
-
-    to_append = string_from_cstring(beginning, state->workspace);
-
-    append_string(state, to_append);
-}
-
-void append_float(_ltbs_reader *state, ltbs_cell *num)
-{
-    int precision = 1000000; // 6 decimal places
-    float value = num->data.floatval;
-
-    if ( value < 0 )
-    {
-	append_byte_(state, '-');
-	value = -value;
-    }
-
-    value += 0.5 / precision;
-
-    int integral = value;
-    int fractional = ( value - integral ) * precision;
-    ltbs_cell to_append = (ltbs_cell)
-    {
-	.type = LTBS_INT, .data = { .integer = integral }
-    };
-
-    append_int(state, &to_append);
-    append_byte_(state, '.');
-
-    for (int i = precision / 10; i > 1; i /= 10)
-    {
-	if ( i > fractional ) append_byte_(state, '0');
-    }
-
-    to_append = (ltbs_cell)
-    {
-	.type = LTBS_INT, .data = { .integer = fractional }
-    };
-    
-    append_int(state, &to_append);
-}
-
-void append_array(_ltbs_reader *state, ltbs_cell *array)
-{
-    ltbs_cell length = (ltbs_cell)
-    {
-	.type = LTBS_INT, .data = { .integer = array->data.array.length }
-    };
-    
-    append_byte_(state, '[');
-    append_int(state, &length);
-    append_byte_(state, ']');
-    append_byte_(state, '{');
-    append_byte_(state, ' ');
-
-    for ( unsigned int index = 0; index < array->data.array.length; index++ )
-    {
-	append_cell(state, array->data.array.arrdata[index]);
-	append_byte_(state, ' ');
-    }
-
-    append_byte_(state, '}');
-}
-
-void append_list(_ltbs_reader *state, ltbs_cell *list)
-{
-    append_byte_(state, '(');
-    append_byte_(state, ' ');
-
-    pair_iterate(list, head, tracker,
-    {
-	append_cell(state, head);
-	append_byte_(state, ' ');
-    });
-
-    append_byte_(state, ')');
-}
-
-void append_hashmap_(_ltbs_reader *state, ltbs_cell *hashmap, ltbs_cell *parent)
-{
-    if ( parent == 0 ) append_byte_(state, '{');
-
-    if ( hashmap->data.hashmap.key != 0 )
-    {
-	append_byte_(state, ':');
-	append_string(state, hashmap->data.hashmap.key);	
-    }
-    else append_byte_(state, ' ');
-    
-    if ( hashmap->data.hashmap.value != 0 )
-    {
-	append_byte_(state, ' ');
-	append_cell(state, hashmap->data.hashmap.value);
-	append_byte_(state, ' ');	
-    }
-
-    for ( int index = 0; index < 4; index++ )
-    {
-	ltbs_cell *child = hashmap->data.hashmap.children[index];
-
-	if ( child != 0 ) append_hashmap_(state, child, hashmap);
-    }
-
-    if ( parent == 0 ) append_byte_(state, '}');
-}
-
-void append_hashmap(_ltbs_reader *state, ltbs_cell *hashmap)
-{
-    append_hashmap_(state, hashmap, 0);
-}
-
-void append_pointer(_ltbs_reader *state, ltbs_cell *cell)
-{
-    void *to_print = cell->data.custom.data;
-    ltbs_cell size = (ltbs_cell)
-    {
-	.type = LTBS_INT,
-	.data = { .integer = (int)  cell->data.custom.size }
-    };
-    
-    append_byte_(state, '[');
-    append_int(state, &size);
-    append_byte_(state, ']');
-    append_byte_(state, ':');
-    append_byte_(state, '0');
-    append_byte_(state, 'x');
-
-    for (int value = 2*sizeof(void *) - 1; value >= 0; value--)
-    {
-	append_byte_(state, "0123456789abcdef"[((long) to_print >> (4 * value) & 15)]);
-    }
-}
-
-void append_cell(_ltbs_reader *state, ltbs_cell *cell)
-{
-    switch ( cell->type )
-    {
-        case LTBS_BYTE: { append_byte(state, cell); } break;
-        case LTBS_INT: { append_int(state, cell); } break;
-        case LTBS_FLOAT: { append_float(state, cell); } break;
-        case LTBS_PAIR: { append_list(state, cell); } break;
-        case LTBS_STRING: { append_string(state, cell); } break;
-        case LTBS_ARRAY: { append_array(state, cell); } break;
-        case LTBS_HASHMAP: { append_hashmap(state, cell); } break;
-        case LTBS_CUSTOM: { append_pointer(state, cell); } break;
-    }
 }
 
 #endif // LIBBLACKSQUID_IMPLEMENTATION
