@@ -219,7 +219,7 @@ struct ltbs_string_vt
     void (*print)(ltbs_cell *string);
     ltbs_cell *(*split)(ltbs_cell *string, byte splitter, Arena *context);
     ltbs_cell *(*split_multi)(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
-    ltbs_cell *(*format)(size_t buffsize, Arena *context, const char *fmt, ...);
+    ltbs_cell *(*format)(Arena *context, const char *fmt, ...);
 };
 
 extern struct ltbs_string_vt String_Vt;
@@ -299,7 +299,7 @@ ltbs_cell *string_copy(ltbs_cell *string, Arena *destination);
 void string_print(ltbs_cell *string);
 ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
 ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
-ltbs_cell *string_format(size_t buffsize, Arena *context, const char *fmt, ...);
+ltbs_cell *string_format(Arena *context, const char *fmt, ...);
 
 struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
 {
@@ -882,25 +882,81 @@ ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *con
     return result;
 }
 
-ltbs_cell *string_format(size_t buffsize, Arena *context, const char *fmt, ...)
+int count_string_formats(const char *format)
+{
+    int result = 0;
+    int is_prev_percent = 0;
+
+    for ( int index = 0; format[index] != 0; index++ )
+    {
+	if ( format[index] == '%' && !is_prev_percent )
+        {
+	    result++;
+	    is_prev_percent = 1;
+	}
+
+	else 
+	{
+	    is_prev_percent = 0;
+	}
+    }
+
+    return result;
+}
+
+int ltbs_strlen(char *string)
+{
+    int result = 0;
+
+    for (int index = 0; string[index] != 0; index++)
+	result++;
+
+    return result;
+}
+
+ltbs_cell *string_format(Arena *context, const char *fmt, ...)
 {
     ltbs_cell *result = ltbs_alloc(context);
-    char *buffer = arena_alloc(context, buffsize);
+    char *buffer;
+    size_t total_size = 0;
     va_list arguments;
+    FILE *as_file;
     
-    result->type = LTBS_STRING;
-    result->data.string.strdata = buffer;
-    result->data.string.length  = buffsize;
-
-    for (size_t index = 0; index < buffsize; index++)
-	buffer[index] = 0;
-
-    FILE *as_file = fmemopen(buffer, buffsize, "r+");
     va_start(arguments, fmt);
-    vfprintf(as_file, fmt, arguments);
+
+    {
+	for (size_t index = 0; fmt[index]; index++) total_size++;
+    }
+
+    {
+	int total_formats = count_string_formats(fmt);
+
+	for ( int index = 0; index < total_formats; index++ )
+	{
+	    char *current = va_arg(arguments, char *);
+	    total_size += ltbs_strlen(current);
+	}
+
+	buffer = arena_alloc(context, total_size + 1);
+    }
+
+    {
+	for ( size_t index = 0; index < total_size; index++ ) buffer[index] = 0;
+    }
+
     va_end(arguments);
+
+    va_start(arguments, fmt);
+
+    result->type = LTBS_STRING;
+    result->data.string.length = total_size;
+    result->data.string.strdata = buffer;
+
+    as_file = fmemopen(buffer, total_size, "r+");
+    vfprintf(as_file, fmt, arguments);
     fclose(as_file);
 
+    va_end(arguments);
     return result;
 }
 

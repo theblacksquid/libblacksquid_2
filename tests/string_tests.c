@@ -58,7 +58,7 @@ int main()
     printf(") \n");
 
     printf("Printing a formatted string...\n");
-    printf("%s\n", String_Vt.format(1000, &context, "this is an %s example", "hello world")->data.string.strdata);
+    printf("%s\n", String_Vt.format(&context, "this is an %s, %s example", "hello world", "(yet another)")->data.string.strdata);
     
     arena_free(&context);
     return 0;
