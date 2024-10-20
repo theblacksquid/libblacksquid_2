@@ -130,6 +130,7 @@ struct ltbs_cell
     {
 	LTBS_BYTE,
 	LTBS_INT,
+	LTBS_UINT,
 	LTBS_FLOAT,
 	LTBS_STRING,
 	LTBS_ARRAY,
@@ -140,7 +141,8 @@ struct ltbs_cell
 
     union
     {
-	int integer;
+	uint64_t uinteger;
+	int64_t integer;
 	float floatval;
 	byte byteval;
 	
@@ -196,8 +198,9 @@ struct ltbs_list_vt
     ltbs_cell *(*sort)(ltbs_cell *list, compare_fn compare, Arena *context);
     ltbs_cell *(*filter)(ltbs_cell *list, pred_fn pred, Arena *context);
     ltbs_cell *(*nil)();
-    ltbs_cell *(*from_int)(int value, Arena *context);
-    ltbs_cell *(*from_float)(float value, Arena *context);
+    ltbs_cell *(*from_int)(int64_t value, Arena *context);
+    ltbs_cell *(*from_float)(double value, Arena *context);
+    ltbs_cell *(*from_uint)(uint64_t value, Arena *context);
     ltbs_cell *(*map)(ltbs_cell *list, transform_fn transform, Arena *context);
     void (*for_each)(ltbs_cell *list, callback_fn callback, void *param);
 };
@@ -216,7 +219,7 @@ struct ltbs_string_vt
     void (*print)(ltbs_cell *string);
     ltbs_cell *(*split)(ltbs_cell *string, byte splitter, Arena *context);
     ltbs_cell *(*split_multi)(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
-    ltbs_cell *(*format)(size_t *buffsize, Arena *context, const char *fmt, ...);
+    ltbs_cell *(*format)(size_t buffsize, Arena *context, const char *fmt, ...);
 };
 
 extern struct ltbs_string_vt String_Vt;
@@ -239,13 +242,14 @@ extern struct ltbs_hashmap_vt Hash_Vt;
 
 #endif // LIBBLACKSQUID_H
 
-/* #define LIBBLACKSQUID_IMPLEMENTATION */
+#define LIBBLACKSQUID_IMPLEMENTATION
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
 ltbs_cell *ltbs_alloc(Arena *context);
-ltbs_cell *int_from_int(int num, Arena *context);
-ltbs_cell *from_float(float value, Arena *context);
+ltbs_cell *int_from_int(int64_t num, Arena *context);
+ltbs_cell *uint_from_uint(uint64_t num, Arena *context);
+ltbs_cell *from_float(double value, Arena *context);
 ltbs_cell *pair_head(ltbs_cell *pair);
 ltbs_cell *pair_rest(ltbs_cell *pair);
 ltbs_cell *pair_cons(ltbs_cell *value, ltbs_cell *list, Arena *context);
@@ -282,6 +286,7 @@ struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
     .from_float = from_float,
     .map = pair_map,
     .for_each = pair_foreach,
+    .from_uint = uint_from_uint,
 };
 
 ltbs_cell *string_from_cstring(const char *cstring, Arena *context);
@@ -359,7 +364,7 @@ ltbs_cell *ltbs_alloc(Arena *context)
     return result;
 }
 
-ltbs_cell *int_from_int(int num, Arena *context)
+ltbs_cell *int_from_int(int64_t num, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     result->type = LTBS_INT;
@@ -368,13 +373,22 @@ ltbs_cell *int_from_int(int num, Arena *context)
     return result;
 }
 
-ltbs_cell *from_float(float num, Arena *context)
+ltbs_cell *from_float(double num, Arena *context)
 {
     ltbs_cell *result = ltbs_alloc(context);
     result->type = LTBS_FLOAT;
     result->data.floatval = num;
 
     return result;
+}
+
+ltbs_cell *uint_from_uint(uint64_t num, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    result->type = LTBS_UINT;
+    result->data.uinteger = num;
+
+    return result;    
 }
 
 ltbs_cell *pair_head(ltbs_cell *list)
