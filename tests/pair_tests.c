@@ -136,7 +136,7 @@ int main()
 
 	ltbs_cell *times_two = List_Vt.map(even_ints, multiply_by_two, &context);
 
-	List_Vt.for_each(times_two, print_int);
+	List_Vt.for_each(times_two, print_int, NULL);
     }
 
     arena_free(&context);

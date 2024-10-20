@@ -101,7 +101,7 @@ typedef int (*compare_fn)(ltbs_cell*, ltbs_cell*);
 typedef int (*pred_fn)(ltbs_cell*);
 typedef char byte;
 typedef ltbs_cell *(*transform_fn)(ltbs_cell *cell, Arena *context);
-typedef void (*callback_fn)(ltbs_cell *cell);
+typedef void (*callback_fn)(ltbs_cell *cell, void *param);
 
 #define HASH_FACTOR 1111111111111111111u
 
@@ -198,7 +198,7 @@ struct ltbs_list_vt
     ltbs_cell *(*from_int)(int value, Arena *context);
     ltbs_cell *(*from_float)(float value, Arena *context);
     ltbs_cell *(*map)(ltbs_cell *list, transform_fn transform, Arena *context);
-    void (*for_each)(ltbs_cell *list, callback_fn callback);
+    void (*for_each)(ltbs_cell *list, callback_fn callback, void *param);
 };
 
 extern struct ltbs_list_vt List_Vt;
@@ -261,7 +261,7 @@ ltbs_cell *pair_min_and_remove(ltbs_cell *list, int (*compare)(ltbs_cell*, ltbs_
 ltbs_cell *pair_filter(ltbs_cell *list, int (*pred)(ltbs_cell*), Arena *context);
 ltbs_cell *pair_nil();
 ltbs_cell *pair_map(ltbs_cell *list, transform_fn transform, Arena *context);
-void pair_foreach(ltbs_cell *list, callback_fn callback);
+void pair_foreach(ltbs_cell *list, callback_fn callback, void *param);
 
 struct ltbs_list_vt List_Vt = (struct ltbs_list_vt)
 {
@@ -612,11 +612,11 @@ ltbs_cell *pair_map(ltbs_cell *list, transform_fn transform, Arena *context)
     return result;
 }
 
-void pair_foreach(ltbs_cell *list, callback_fn callback)
+void pair_foreach(ltbs_cell *list, callback_fn callback, void *param)
 {
     pair_iterate(list, head, tracker,
     {
-	callback(head);
+	callback(head, param);
     });
 }
 
