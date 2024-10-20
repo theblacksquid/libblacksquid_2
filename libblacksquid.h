@@ -703,20 +703,16 @@ ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context)
     ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
     int length = string1->data.string.length + string2->data.string.length;
     byte *bytearray = arena_alloc(context, length + 1);
+    FILE *as_file;
     
     result->type = LTBS_STRING;
     result->data.string.length = length;
     result->data.string.strdata = bytearray;
     bytearray[length + 1] = '\0';
 
-    for (int index = 0; index < length; index++)
-    {
-	int length1 = string1->data.string.length;
-	if ( index < length1 )
-	    bytearray[index] = string1->data.string.strdata[index];
-	else
-	    bytearray[index] = string2->data.string.strdata[index - length1];
-    }
+    as_file = fmemopen(bytearray, length, "r+");
+    fprintf(as_file, "%s%s", string1->data.string.strdata, string2->data.string.strdata);
+    fclose(as_file);
 
     return result;
 }
