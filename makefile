@@ -13,8 +13,8 @@ WITH_VALGRIND=$(FLAGS_DEFAULT) -fsanitize=undefined
 WITH_ASAN=$(FLAGS_DEFAULT) -fsanitize=undefined,address
 
 DEPS=\
-$(shell pkg-config --cflags --libs libxml-2.0) \
-$(shell pkg-config --cflags --libs sqlite3)
+`pkg-config --cflags --libs libxml-2.0` \
+`pkg-config --cflags --libs sqlite3`
 
 all: pair hashmap string xml_vg xml_asan sqlite_tests_vg
 
