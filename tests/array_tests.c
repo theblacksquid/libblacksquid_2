@@ -84,12 +84,49 @@ int main()
 
     int length = array_copy_test->data.array.total_size / array_copy_test->data.array.elem_size;
 	    
-    for ( int index = 0; index < length; index++ )
     {
-	ltbs_cell *value = Array_Vt.at_index(array_copy_test, index);
-	printf("value: %ld\n", value->data.integer);
+	for ( int index = 0; index < length; index++ )
+	{
+	    ltbs_cell *value = Array_Vt.at_index(array_copy_test, index);
+	    printf("value: %ld\n", value->data.integer);
+	}
     }
 	    
+    printf("\n----------------------\n");
+
+    ltbs_cell *new_array_test = Array_Vt.new_array(sizeof(ltbs_cell), sizeof(ltbs_cell) * 100, &global);
+
+    printf("\n----------------------\n");
+    printf("Array_Vt.set_index()");
+    printf("\n----------------------\n");
+
+    {
+	for ( int index = 0; index < 100; index++ )
+	    Array_Vt.set_index(new_array_test, List_Vt.from_int(100 - index, &global), index);
+    }
+
+    {
+	for ( int index = 0; index < 100; index++ )
+	{
+	    ltbs_cell *value = Array_Vt.at_index(new_array_test, index);
+	    printf("value: %03ld\n", value->data.integer);
+	}	
+    }
+
+    printf("\n----------------------\n");
+    printf("Array.slice()");
+    printf("\n----------------------\n");
+
+    ltbs_cell test_array_slice = Array_Vt.slice(new_array_test, 10, 10);
+
+    {
+	for ( int index = 0; index < 10; index++ )
+	{
+	    ltbs_cell *value = Array_Vt.at_index(&test_array_slice, index);
+	    printf("value: %03ld\n", value->data.integer);
+	}
+    }
+    
     printf("\n----------------------\n");
 
     arena_free(&global);

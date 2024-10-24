@@ -334,9 +334,11 @@ ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
 void *array_ref(ltbs_cell *array, unsigned int index);
 ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context);
 ltbs_cell *array_reverse(ltbs_cell *array, Arena *context);
-ltbs_cell array_slice(ltbs_cell *array, unsigned int start, unsigned int length);
+ltbs_cell array_slice(ltbs_cell *array, int start, int length);
 ltbs_cell *array_append(ltbs_cell *array1, ltbs_cell *array2, Arena *context);
 ltbs_cell *array_copy(ltbs_cell *array, Arena *destination);
+void array_set_index(ltbs_cell *array, void *value, int index);
+ltbs_cell *array_new(size_t elem_size, size_t total_size, Arena *context);
 
 struct ltbs_array_vt Array_Vt = (struct ltbs_array_vt)
 {
@@ -344,7 +346,9 @@ struct ltbs_array_vt Array_Vt = (struct ltbs_array_vt)
     .from_list = pair_to_array,
     .at_index = array_ref,
     .slice = array_slice,
-    .copy = array_copy
+    .copy = array_copy,
+    .set_index = array_set_index,
+    .new_array = array_new,
 };
 
 ltbs_cell *hash_make(Arena *context);
@@ -979,6 +983,20 @@ ltbs_cell *string_format(Arena *context, const char *fmt, ...)
     return result;
 }
 
+ltbs_cell *array_new(size_t elem_size, size_t total_size, Arena *context)
+{
+    ltbs_cell *result = ltbs_alloc(context);
+    char *buffer = arena_alloc(context, total_size);
+    
+    result->data.array.elem_size = elem_size;
+    result->data.array.total_size = total_size;
+    result->data.array.buffer = buffer;
+
+    for ( size_t index = 0; index < total_size; index++ ) buffer[index] = 0;
+
+    return result;
+}
+
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context)
 {
     ltbs_cell *result = List_Vt.nil();
@@ -1052,10 +1070,10 @@ ltbs_cell *pair_to_array(ltbs_cell *list, Arena *context)
 /*     return result; */
 /* } */
 
-ltbs_cell array_slice(ltbs_cell *array, unsigned int start, unsigned int length)
+ltbs_cell array_slice(ltbs_cell *array, int start, int end)
 {
     size_t offset = array->data.array.elem_size * start;
-    size_t total = array->data.array.elem_size * length;
+    size_t total = array->data.array.elem_size * end;
     void *buffer = &array->data.array.buffer[offset];
     
     return (ltbs_cell)
@@ -1104,18 +1122,23 @@ ltbs_cell *array_copy(ltbs_cell *array, Arena *destination)
     result->type = LTBS_ARRAY;
     result->data.array.elem_size = array->data.array.elem_size;
     result->data.array.total_size = array->data.array.total_size;
-    array->data.array.buffer = dest_buffer;
+    result->data.array.buffer = dest_buffer;
 
-    {
-	
-    }
-
-    {
-	for ( int index = 0; index < total_buffer_size; index++ )
-	    dest_buffer[index] = buffer[index];
-    }
+    for ( int index = 0; index < total_buffer_size; index++ )
+	dest_buffer[index] = buffer[index];
 
     return result;
+}
+
+void array_set_index(ltbs_cell *array, void *value, int index)
+{
+    size_t offset = array->data.array.elem_size * index;
+    size_t elem = array->data.array.elem_size;
+    char *as_buffer = value;
+    char *destination = array->data.array.buffer;
+
+    for ( size_t index = 0; index < elem; index++ )
+	destination[offset + index] = as_buffer[index];
 }
 
 ltbs_cell *hash_make(Arena *context)
