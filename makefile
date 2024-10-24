@@ -39,6 +39,12 @@ hashmap: tests/hashmap_tests.c
 	gcc $(WITH_VALGRIND) tests/hashmap_tests.c -o hashmap;
 	valgrind ./hashmap;
 
+array: tests/array_tests.c
+	gcc $(WITH_ASAN) tests/array_tests.c -o array;
+	./array;
+	gcc $(WITH_VALGRIND) tests/array_tests.c -o array;
+	valgrind ./array;
+
 xml_vg: xml_vg.o
 	gcc xml_vg.o $(WITH_VALGRIND) $(DEPS) -o xml_vg
 	valgrind ./xml_vg
@@ -72,3 +78,4 @@ clean:
 	-rm ./xml_asan;
 	-rm ./sqlite_tests_vg;
 	-rm ./ltbs_sqlite.h;
+	-rm ./array;
