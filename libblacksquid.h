@@ -256,7 +256,7 @@ extern struct ltbs_hashmap_vt Hash_Vt;
 
 #endif // LIBBLACKSQUID_H
 
-#define LIBBLACKSQUID_IMPLEMENTATION
+/* #define LIBBLACKSQUID_IMPLEMENTATION */
 #ifdef LIBBLACKSQUID_IMPLEMENTATION
 #define ARENA_IMPLEMENTATION
 
@@ -672,15 +672,25 @@ ltbs_cell *string_from_cstring(const char *cstring, Arena *context)
     int length = 0;
     result->type = LTBS_STRING;
     
-    for ( byte ch = cstring[0]; ch != 0; ch = cstring[++length] ){}
+    {
+	for ( int index = 0; cstring[index]; index++ )
+	    length++;
+    }
 
-    byte *buffer = arena_alloc(context, length);
+    byte *buffer = arena_alloc(context, length + 1);
 
     result->data.string.strdata = buffer;
     result->data.string.length = length;
 
-    for ( int index = 0; index < length; index++ )
-	buffer[index] = cstring[index];
+    {
+	for ( int index = 0; index < length + 1; index++ )
+	    buffer[index] = 0;
+    }
+
+    {
+	for ( int index = 0; index < length; index++ )
+	    buffer[index] = cstring[index];
+    }
 
     buffer[length] = 0;
     
@@ -800,10 +810,16 @@ ltbs_cell *string_copy(ltbs_cell *string, Arena *destination)
     result->type = LTBS_STRING;
     result->data.string.strdata = buffer;
     result->data.string.length = length;
-    buffer[length + 1] = '\0';
 
-    for (unsigned int index = 0; index < length; index++)
-	buffer[index] = string->data.string.strdata[index];
+    {
+	for (unsigned int index = 0; index < length + 1; index++)
+	    buffer[index] = 0;
+    }
+
+    {
+	for (unsigned int index = 0; index < length; index++)
+	    buffer[index] = string->data.string.strdata[index];
+    }
 
     return result;
 }
@@ -894,13 +910,16 @@ ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *con
 	index++;
     }
 
-    ltbs_cell *to_add = ltbs_alloc(context);
-    to_add->type = LTBS_STRING;
-    to_add->data.string.strdata = &buffer_copy[index - current_length];
-    to_add->data.string.length = current_length;
-    buffer_copy[index] = '\0';
-    result = pair_cons(to_add, result, context);
-    result = pair_reverse(result, context);
+    if ( string_contains(splitter, buffer_copy[index]) && (current_length != 0) )
+    {
+	ltbs_cell *to_add = ltbs_alloc(context);
+	to_add->type = LTBS_STRING;
+	to_add->data.string.strdata = &buffer_copy[index - current_length];
+	to_add->data.string.length = current_length;
+	buffer_copy[index] = '\0';
+	result = pair_cons(to_add, result, context);
+	result = pair_reverse(result, context);
+    }
 
     return result;
 }
@@ -1158,7 +1177,7 @@ int hash_compute(ltbs_string *key)
 {
     int result = 0x100;
 
-    for (unsigned int index = 0; index < key->length; index++)
+    for (unsigned int index = 0; index < key->length - 1; index++)
     {
 	result ^= key->strdata[index];
 	result *= HASH_FACTOR;
