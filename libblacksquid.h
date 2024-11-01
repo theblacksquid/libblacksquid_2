@@ -747,6 +747,9 @@ ltbs_cell *string_append(ltbs_cell *string1, ltbs_cell *string2, Arena *context)
     result->data.string.strdata = bytearray;
     bytearray[length + 1] = '\0';
 
+    for ( int index = 0; index < length + 1; index++ )
+	bytearray[index] = 0;
+
     as_file = fmemopen(bytearray, length, "r+");
     fprintf(as_file, "%s%s", string1->data.string.strdata, string2->data.string.strdata);
     fclose(as_file);
