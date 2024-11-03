@@ -114,7 +114,7 @@ int main()
     }
 
     printf("\n----------------------\n");
-    printf("Array.slice()");
+    printf("Array_Vt.slice()");
     printf("\n----------------------\n");
 
     ltbs_cell test_array_slice = Array_Vt.slice(new_array_test, 10, 10);

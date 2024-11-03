@@ -59,6 +59,16 @@ int main()
 
     printf("Printing a formatted string...\n");
     printf("%s\n", String_Vt.format(&context, "this is an %s, %s example", "hello world", "(yet another)")->data.string.strdata);
+
+    printf("string_from_file()");
+    ltbs_cell *from_file = String_Vt.from_file("test_data/rss.htm", &context);
+
+    if ( from_file )
+    {
+	printf("%s\n", from_file->data.string.strdata);
+    }
+
+    else printf("unable to read file.\n");
     
     arena_free(&context);
     return 0;

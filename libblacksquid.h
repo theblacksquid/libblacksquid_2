@@ -221,6 +221,7 @@ struct ltbs_string_vt
     ltbs_cell *(*split)(ltbs_cell *string, byte splitter, Arena *context);
     ltbs_cell *(*split_multi)(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
     ltbs_cell *(*format)(Arena *context, const char *fmt, ...);
+    ltbs_cell *(*from_file)(const char *path, Arena *context);
 };
 
 extern struct ltbs_string_vt String_Vt;
@@ -314,6 +315,7 @@ void string_print(ltbs_cell *string);
 ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
 ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
 ltbs_cell *string_format(Arena *context, const char *fmt, ...);
+ltbs_cell *string_from_file(const char *filepath, Arena *context);
 
 struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
 {
@@ -328,6 +330,7 @@ struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
     .split = string_split,
     .split_multi = string_split_multi,
     .format = string_format,
+    .from_file = string_from_file,
 };
 
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
@@ -372,6 +375,8 @@ ltbs_cell *format_serialize(char *format, ltbs_cell *data_map, Arena *context);
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <string.h>
 
 static const ltbs_cell PAIR_NIL = (ltbs_cell)
 {
@@ -1002,6 +1007,36 @@ ltbs_cell *string_format(Arena *context, const char *fmt, ...)
     fclose(as_file);
 
     va_end(arguments);
+    return result;
+}
+
+ltbs_cell *string_from_file(const char *filepath, Arena *context)
+{
+    ltbs_cell *result = arena_alloc(context, sizeof(ltbs_cell));
+    FILE *current_file = fopen(filepath, "r");
+    int length = 0;
+
+    *result = (ltbs_cell) {0};
+    
+    if ( current_file == 0 )
+    {
+	fprintf(stderr, "%s\n", strerror(errno));
+	return 0;
+    }
+
+    fseek(current_file, 0L, SEEK_END);
+    length = ftell(current_file) + 1;
+    rewind(current_file);
+
+    result->data.string.length = length;
+    result->data.string.strdata = arena_alloc(context, length + 1);
+
+    for ( int index = 0; index < length + 1; index++ )
+	result->data.string.strdata[index] = 0;
+
+    fread(result->data.string.strdata, length, length, current_file);
+
+    fclose(current_file);
     return result;
 }
 
