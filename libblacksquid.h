@@ -1034,7 +1034,7 @@ ltbs_cell *string_from_file(const char *filepath, Arena *context)
     for ( int index = 0; index < length + 1; index++ )
 	result->data.string.strdata[index] = 0;
 
-    fread(result->data.string.strdata, length, length, current_file);
+    fread(result->data.string.strdata, 1, length, current_file);
 
     fclose(current_file);
     return result;
