@@ -26,13 +26,14 @@ struct ltbs_xml_vt
     xmlAttrPtr (*node_set_prop)(xmlNodePtr node, char *propname, char *value);
     void (*node_set_text)(xmlNodePtr node, char *content);
     char *(*node_to_string)(xmlNodePtr node);
+    void (*node_append_child)(xmlNodePtr node, xmlNodePtr child);
 };
 
 extern struct ltbs_xml_vt Libxml2_vt;
 
 #endif // LTBS_LXML2_H
 
-#define LTBS_LIBXML2_IMPLEMENTATION
+/* #define LTBS_LIBXML2_IMPLEMENTATION */
 #ifdef LTBS_LIBXML2_IMPLEMENTATION
 
 htmlDocPtr from_file(char *filepath);
@@ -45,6 +46,7 @@ char *node_get_prop(xmlNodePtr node, char *propname);
 xmlAttrPtr node_set_prop(xmlNodePtr node, char *propname, char *value);
 void node_set_text(xmlNodePtr node, char *content);
 char *node_to_string(xmlNodePtr node);
+void node_append_child(xmlNodePtr node, xmlNodePtr child);
 
 ltbs_xml_vt Libxml2_vt = (ltbs_xml_vt)
 {
@@ -58,6 +60,7 @@ ltbs_xml_vt Libxml2_vt = (ltbs_xml_vt)
     .node_set_prop = node_set_prop,
     .node_set_text = node_set_text,
     .node_to_string = node_to_string,
+    .node_append_child = node_append_child,
 };
 
 htmlDocPtr from_file(char *filepath)
@@ -177,11 +180,23 @@ char *node_to_string(xmlNodePtr node)
 {
     xmlKeepBlanksDefault(0);
     
-    xmlBufferPtr output = xmlBufferCreate();
-    int response = xmlNodeDump(output, node->doc, node, 1, 1);
+    if ( node )
+    {
+	xmlBufferPtr output = xmlBufferCreate();
+	int response = xmlNodeDump(output, node->doc, node, 1, 1);
+	if ( response ) return output->content;
+	else return NULL;
+    }
 
-    if ( response ) return output->content;
-    else return NULL;
+    else
+    {
+	return NULL;
+    }
+}
+
+void node_append_child(xmlNodePtr node, xmlNodePtr child)
+{
+    xmlAddChild(node, child);
 }
 
 #endif // LTBS_LIBXML2_IMPLEMENTATION
