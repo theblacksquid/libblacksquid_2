@@ -222,6 +222,7 @@ struct ltbs_string_vt
     ltbs_cell *(*split_multi)(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
     ltbs_cell *(*format)(Arena *context, const char *fmt, ...);
     ltbs_cell *(*from_file)(const char *path, Arena *context);
+    int (*is_suffix)(ltbs_cell *string, ltbs_cell *suffix);
 };
 
 extern struct ltbs_string_vt String_Vt;
@@ -316,6 +317,7 @@ ltbs_cell *string_split(ltbs_cell *string, byte splitter, Arena *context);
 ltbs_cell *string_split_multi(ltbs_cell *string, ltbs_cell *splitter, Arena *context);
 ltbs_cell *string_format(Arena *context, const char *fmt, ...);
 ltbs_cell *string_from_file(const char *filepath, Arena *context);
+int string_is_suffix(ltbs_cell *string, ltbs_cell *suffix);
 
 struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
 {
@@ -331,6 +333,7 @@ struct ltbs_string_vt String_Vt = (struct ltbs_string_vt)
     .split_multi = string_split_multi,
     .format = string_format,
     .from_file = string_from_file,
+    .is_suffix = string_is_suffix,
 };
 
 ltbs_cell *array_to_list(ltbs_cell *array, Arena *context);
@@ -1038,6 +1041,22 @@ ltbs_cell *string_from_file(const char *filepath, Arena *context)
 
     fclose(current_file);
     return result;
+}
+
+int string_is_suffix(ltbs_cell *string, ltbs_cell *suffix)
+{
+    if ( suffix->data.string.length > string->data.string.length )
+	return 0;
+
+    char *string_buf = string->data.string.strdata;
+    char *suffix_buf = suffix->data.string.strdata;
+    int start = string->data.string.length - suffix->data.string.length;
+
+    for ( unsigned int index = 0; index < suffix->data.string.length; index++ )
+	if ( suffix_buf[index] != string_buf[index + start] )
+	    return 0;
+
+    return 1;
 }
 
 ltbs_cell *array_new(size_t elem_size, size_t total_size, Arena *context)
