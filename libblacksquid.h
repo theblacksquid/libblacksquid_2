@@ -249,7 +249,7 @@ struct ltbs_hashmap_vt
 {
     ltbs_cell *(*new)(Arena *context);
     ltbs_cell *(*upsert)(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
-    int (*compute)(ltbs_string *key);
+    uint64_t (*compute)(ltbs_string *key);
     ltbs_cell *(*lookup)(ltbs_cell **map, byte *cstring);
     ltbs_cell *(*keys)(ltbs_cell **map, Arena *context);
 };
@@ -359,7 +359,7 @@ struct ltbs_array_vt Array_Vt = (struct ltbs_array_vt)
 
 ltbs_cell *hash_make(Arena *context);
 ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena *context);
-int hash_compute(ltbs_string *key);
+uint64_t hash_compute(ltbs_string *key);
 ltbs_cell *hash_lookup(ltbs_cell **map, byte *cstring);
 ltbs_cell *hash_keys(ltbs_cell **map, Arena *context);
 
@@ -1226,15 +1226,16 @@ ltbs_cell *hash_make(Arena *context)
     result->data.hashmap.children[2] = 0;
     result->data.hashmap.children[3] = 0;
     result->data.hashmap.value = 0;
+    result->data.hashmap.key = 0;
 
     return result;
 }
 
-int hash_compute(ltbs_string *key)
+uint64_t hash_compute(ltbs_string *key)
 {
     int result = 0x100;
 
-    for (unsigned int index = 0; index < key->length - 1; index++)
+    for (uint64_t index = 0; index < key->length - 1; index++)
     {
 	result ^= key->strdata[index];
 	result *= HASH_FACTOR;
@@ -1247,43 +1248,31 @@ ltbs_cell *hash_upsert(ltbs_cell **map, ltbs_cell *key, ltbs_cell *value, Arena 
 {
     ltbs_cell *result = 0;
     
-    for (unsigned int hash = hash_compute(&key->data.string); *map; hash <<= 2)
+    for (uint64_t hash = hash_compute(&key->data.string); *map; hash <<= 2)
     {	
 	if ( ((*map)->data.hashmap.key != 0) &&
 	     string_compare(key, (*map)->data.hashmap.key) )
 	{
 	    if ( (context != 0) && (value != 0) )
 	    {
-		ltbs_cell *key_copy = string_copy(key, context);
-		*map = ltbs_alloc(context);
-		(*map)->type = LTBS_HASHMAP;
-		(*map)->data.hashmap.key = key_copy;
 		(*map)->data.hashmap.value = value;
-
-		for ( int index = 0; index < 4; index++ )
-		    (*map)->data.hashmap.children[index] = 0;
-
 		result = value;
-	        break;
+	        return result;
 	    }
-
+	    
 	    result = (*map)->data.hashmap.value;
-	    break;
+	    return result;
 	}
 
-	map = &(*map)->data.hashmap.children[hash >> 30];
+	map = &(*map)->data.hashmap.children[hash >> 62];
     }
 
     if ( (context != 0) && (value != 0) )
     {
 	ltbs_cell *key_copy = string_copy(key, context);
-	*map = ltbs_alloc(context);
-	(*map)->type = LTBS_HASHMAP;
+	*map = hash_make(context);
 	(*map)->data.hashmap.key = key_copy;
 	(*map)->data.hashmap.value = value;
-
-	for ( int index = 0; index < 4; index++ )
-	    (*map)->data.hashmap.children[index] = 0;
 
 	result = value;
     }

@@ -39,6 +39,13 @@ hashmap: tests/hashmap_tests.c
 	gcc $(WITH_VALGRIND) tests/hashmap_tests.c -o hashmap;
 	valgrind ./hashmap;
 
+hashmap_stress: tests/hashmap_stresstest.c
+	gcc $(WITH_ASAN) tests/hashmap_stresstest.c -o hashmap_stress;
+	./hashmap_stress;
+	rm ./hashmap_stress;
+	gcc $(WITH_VALGRIND) tests/hashmap_stresstest.c -o hashmap_stress;
+	valgrind ./hashmap_stress;
+
 array: tests/array_tests.c
 	gcc $(WITH_ASAN) tests/array_tests.c -o array;
 	./array;
@@ -79,3 +86,4 @@ clean:
 	-rm ./sqlite_tests_vg;
 	-rm ./ltbs_sqlite.h;
 	-rm ./array;
+	-rm ./hashmap_stress
